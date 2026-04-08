@@ -15,6 +15,7 @@ pub struct Medication {
 }
 
 #[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct MedicationWithStats {
     #[serde(flatten)]
     pub medication: Medication,

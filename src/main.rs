@@ -14,6 +14,7 @@ use axum::{
 use color_eyre::Result;
 use sqlx::SqlitePool;
 use std::env;
+use tower_http::cors::{Any, CorsLayer};
 
 const DATABASE_URL: &str = "DATABASE_URL";
 
@@ -43,6 +44,11 @@ async fn main() -> Result<()> {
 
     let state = AppState { pool };
 
+    let cors = CorsLayer::new()
+        .allow_origin(Any)
+        .allow_methods(Any)
+        .allow_headers(Any);
+
     let app = Router::new()
         .route("/health", get(health))
         .route(
@@ -56,6 +62,7 @@ async fn main() -> Result<()> {
                 .patch(update_medication),
         )
         .route("/medications/{id}/log", post(create_log_entry))
+        .layer(cors)
         .with_state(state);
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await?;
