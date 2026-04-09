@@ -5,5 +5,6 @@ CREATE TABLE log_entries (
     amount REAL NOT NULL,
     date TEXT NOT NULL,
     note TEXT,
-    FOREIGN KEY (medication_id) REFERENCES medications(id)
+    FOREIGN KEY (medication_id) REFERENCES medications(id) ON DELETE CASCADE
 );
+

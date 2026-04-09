@@ -11,6 +11,7 @@ pub struct Medication {
     pub unit: String,
     pub schedule: Schedule,
     pub warning_threshold: u16,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub logs: Option<Vec<LogEntry>>,
 }
 
@@ -45,6 +46,7 @@ pub struct UpdateMedication {
 #[derive(Debug)]
 pub struct DbMedication {
     pub id: Option<String>,
+    pub user_id: String,
     pub name: String,
     pub unit: String,
     pub schedule_kind: String,
@@ -79,7 +81,7 @@ impl TryFrom<DbMedication> for Medication {
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "camelCase")]
-pub enum LogEntry {
+pub enum CreateLogEntry {
     Baseline {
         amount: f64,
         date: NaiveDate,
@@ -92,7 +94,25 @@ pub enum LogEntry {
     },
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(tag = "kind", rename_all = "camelCase")]
+pub enum LogEntry {
+    Baseline {
+        id: Uuid,
+        amount: f64,
+        date: NaiveDate,
+        note: Option<String>,
+    },
+    Refill {
+        id: Uuid,
+        amount: f64,
+        date: NaiveDate,
+        note: Option<String>,
+    },
+}
+
 pub struct DbLogEntry {
+    pub id: Option<String>,
     pub kind: String,
     pub amount: f64,
     pub date: NaiveDate,
@@ -105,11 +125,13 @@ impl TryFrom<DbLogEntry> for LogEntry {
     fn try_from(value: DbLogEntry) -> Result<Self, Self::Error> {
         match value.kind.as_ref() {
             "baseline" => Ok(LogEntry::Baseline {
+                id: Uuid::parse_str(&value.id.unwrap())?,
                 amount: value.amount,
                 date: value.date,
                 note: value.note,
             }),
             "refill" => Ok(LogEntry::Refill {
+                id: Uuid::parse_str(&value.id.unwrap())?,
                 amount: value.amount,
                 date: value.date,
                 note: value.note,
@@ -122,9 +144,12 @@ impl TryFrom<DbLogEntry> for LogEntry {
 #[derive(Debug, Serialize, Deserialize, Copy, Clone)]
 #[serde(tag = "kind", rename_all = "camelCase")]
 pub enum Schedule {
+    #[serde(rename_all = "camelCase")]
     Daily { amount: f64 },
+    #[serde(rename_all = "camelCase")]
     Weekly { day_of_week: u8, amount: f64 },
 }
+
 impl LogEntry {
     fn date(&self) -> &NaiveDate {
         match self {
@@ -153,6 +178,36 @@ fn count_weekday_between(start: NaiveDate, end: NaiveDate, target_wd: u8) -> i64
     } else {
         1 + (end - first).num_days() / 7
     }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct User {
+    pub id: Uuid,
+    pub username: String,
+    pub password_hash: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct RegisterRequest {
+    pub username: String,
+    pub password: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct LoginRequest {
+    pub username: String,
+    pub password: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct AuthResponse {
+    pub token: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Claims {
+    pub sub: String, // user id
+    pub exp: usize,  // expiry timestamp
 }
 
 impl Medication {
@@ -233,6 +288,7 @@ mod tests {
             schedule: Schedule::Daily { amount: 5. },
             warning_threshold: 14,
             logs: Some(vec![LogEntry::Baseline {
+                id: Uuid::nil(),
                 amount: 100.,
                 date: date("2026-04-01"),
                 note: None,
@@ -256,11 +312,13 @@ mod tests {
             warning_threshold: 14,
             logs: Some(vec![
                 LogEntry::Baseline {
+                    id: Uuid::nil(),
                     amount: 100.,
                     date: date("2026-04-01"),
                     note: None,
                 },
                 LogEntry::Refill {
+                    id: Uuid::nil(),
                     amount: 20.,
                     date: date("2026-04-05"),
                     note: None,
@@ -286,6 +344,7 @@ mod tests {
             },
             warning_threshold: 14,
             logs: Some(vec![LogEntry::Baseline {
+                id: Uuid::nil(),
                 amount: 100.,
                 date: date("2026-04-01"),
                 note: None,
@@ -322,6 +381,7 @@ mod tests {
             },
             warning_threshold: 14,
             logs: Some(vec![LogEntry::Baseline {
+                id: Uuid::nil(),
                 amount: 2.,
                 date: date("2026-04-01"),
                 note: None,
