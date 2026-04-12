@@ -44,6 +44,23 @@ pub struct UpdateMedication {
 }
 
 #[derive(Debug)]
+pub struct DbMedicationWithLogRow {
+    pub id: Option<String>,
+    pub user_id: String,
+    pub name: String,
+    pub unit: String,
+    pub schedule_kind: String,
+    pub schedule_amount: f64,
+    pub schedule_day_of_week: Option<i64>,
+    pub warning_threshold: i64,
+    pub log_id: Option<String>,
+    pub log_kind: Option<String>,
+    pub log_amount: Option<f64>,
+    pub log_date: Option<NaiveDate>,
+    pub log_note: Option<String>,
+}
+
+#[derive(Debug)]
 pub struct DbMedication {
     pub id: Option<String>,
     pub user_id: String,

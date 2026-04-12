@@ -5,6 +5,7 @@ use axum::{
     response::{IntoResponse, Response},
 };
 use chrono::NaiveDate;
+use color_eyre::eyre::OptionExt;
 use sqlx::SqlitePool;
 use uuid::Uuid;
 
@@ -14,8 +15,8 @@ use crate::{
     extractors::LocalDate,
     middleware::AuthUser,
     models::{
-        CreateLogEntry, CreateMedication, DbLogEntry, DbMedication, LogEntry, Medication,
-        MedicationWithStats, UpdateMedication,
+        CreateLogEntry, CreateMedication, DbMedication, DbMedicationWithLogRow, LogEntry,
+        Medication, MedicationWithStats, Schedule, UpdateMedication,
     },
 };
 
@@ -23,35 +24,161 @@ pub async fn health() -> &'static str {
     "ok"
 }
 
+async fn get_all_medications_with_logs(
+    pool: &SqlitePool,
+    user_id: &str,
+) -> Result<Vec<Medication>, AppError> {
+    let rows = sqlx::query_as!(DbMedicationWithLogRow,
+        r#" SELECT m.id, m.user_id, m.name, m.unit, m.schedule_kind, m.schedule_amount, m.schedule_day_of_week, m.warning_threshold,
+                l.id AS log_id, l.kind AS log_kind, l.amount AS log_amount,
+                l.date AS "log_date: NaiveDate", l.note AS log_note
+            FROM medications m LEFT JOIN log_entries l ON m.id = l.medication_id
+            WHERE m.user_id=?
+            ORDER BY m.id, l.date, l.id"#, user_id).fetch_all(pool).await?;
+
+    let mut medications: Vec<Medication> = Vec::new();
+    let mut current_id = String::new();
+
+    for row in rows {
+        let id = row.id.ok_or_eyre("missing id")?;
+
+        if id != current_id {
+            current_id = id.clone();
+            let medication = Medication {
+                id: Uuid::parse_str(&id).map_err(|_| AppError::InternalError)?,
+                name: row.name,
+                unit: row.unit,
+                schedule: match row.schedule_kind.as_str() {
+                    "daily" => Schedule::Daily {
+                        amount: row.schedule_amount,
+                    },
+                    "weekly" => Schedule::Weekly {
+                        day_of_week: row
+                            .schedule_day_of_week
+                            .ok_or_eyre("missing day_of_week")?
+                            .try_into()
+                            .map_err(|_| AppError::InternalError)?,
+                        amount: row.schedule_amount,
+                    },
+                    _ => return Err(AppError::InternalError),
+                },
+                warning_threshold: row
+                    .warning_threshold
+                    .try_into()
+                    .map_err(|_| AppError::InternalError)?,
+                logs: Some(Vec::new()),
+            };
+            medications.push(medication);
+        }
+
+        if let (Some(kind), Some(amount), Some(date)) = (row.log_kind, row.log_amount, row.log_date)
+        {
+            let id = row.log_id.ok_or_eyre("missing log id")?;
+            let id = Uuid::parse_str(&id).map_err(|_| AppError::InternalError)?;
+            let note = row.log_note;
+            let log = match kind.as_str() {
+                "baseline" => LogEntry::Baseline {
+                    id,
+                    amount,
+                    date,
+                    note,
+                },
+                "refill" => LogEntry::Refill {
+                    id,
+                    amount,
+                    date,
+                    note,
+                },
+                _ => return Err(AppError::InternalError),
+            };
+            medications
+                .last_mut()
+                .unwrap()
+                .logs
+                .as_mut()
+                .unwrap()
+                .push(log);
+        }
+    }
+
+    Ok(medications)
+}
+
 async fn get_medication_with_logs(
     pool: &SqlitePool,
-    id: &str,
+    medication_id: &str,
     user_id: &str,
 ) -> Result<Medication, AppError> {
-    if let Some(medication) = sqlx::query_as!(
-        DbMedication,
-        "SELECT * from medications WHERE id=? AND user_id=?",
-        id,
-        user_id
-    )
-    .fetch_optional(pool)
-    .await?
-    {
-        let medication: Medication = medication.try_into()?;
-        let logs = sqlx::query_as!(
-            DbLogEntry,
-            r#"SELECT id, kind, amount, date AS "date: NaiveDate", note FROM log_entries WHERE medication_id=? ORDER BY date, id"#,
-            id
-        )
-        .fetch_all(pool)
-        .await?.into_iter().map(|l| l.try_into()).collect::<Result<Vec<LogEntry>, _>>()?;
-        Ok(Medication {
-            logs: Some(logs),
-            ..medication
-        })
+    let rows = sqlx::query_as!(DbMedicationWithLogRow,
+        r#" SELECT m.id, m.user_id, m.name, m.unit, m.schedule_kind, m.schedule_amount, m.schedule_day_of_week, m.warning_threshold,
+                l.id AS log_id, l.kind AS log_kind, l.amount AS log_amount,
+                l.date AS "log_date: NaiveDate", l.note AS log_note
+            FROM medications m LEFT JOIN log_entries l ON m.id = l.medication_id
+            WHERE m.user_id=? AND m.id=?
+            ORDER BY m.id, l.date, l.id"#, user_id, medication_id).fetch_all(pool).await?;
+    let count = rows.len();
+    let mut rows = rows.into_iter().peekable();
+
+    let medication = if let Some(row) = rows.peek() {
+        let id = row.id.clone().ok_or_eyre("missing id")?;
+
+        Medication {
+            id: Uuid::parse_str(&id).map_err(|_| AppError::InternalError)?,
+            name: row.name.clone(),
+            unit: row.unit.clone(),
+            schedule: match row.schedule_kind.as_str() {
+                "daily" => Schedule::Daily {
+                    amount: row.schedule_amount,
+                },
+                "weekly" => Schedule::Weekly {
+                    day_of_week: row
+                        .schedule_day_of_week
+                        .ok_or_eyre("missing day_of_week")?
+                        .try_into()
+                        .map_err(|_| AppError::InternalError)?,
+                    amount: row.schedule_amount,
+                },
+                _ => return Err(AppError::InternalError),
+            },
+            warning_threshold: row
+                .warning_threshold
+                .try_into()
+                .map_err(|_| AppError::InternalError)?,
+            logs: None,
+        }
     } else {
-        Err(AppError::NotFound)
+        return Err(AppError::NotFound);
+    };
+    let mut logs = Vec::with_capacity(count);
+
+    for row in rows {
+        if let (Some(kind), Some(amount), Some(date)) = (row.log_kind, row.log_amount, row.log_date)
+        {
+            let id = row.log_id.ok_or_eyre("missing log id")?;
+            let id = Uuid::parse_str(&id).map_err(|_| AppError::InternalError)?;
+            let note = row.log_note;
+            let log = match kind.as_str() {
+                "baseline" => LogEntry::Baseline {
+                    id,
+                    amount,
+                    date,
+                    note,
+                },
+                "refill" => LogEntry::Refill {
+                    id,
+                    amount,
+                    date,
+                    note,
+                },
+                _ => return Err(AppError::InternalError),
+            };
+            logs.push(log);
+        }
     }
+    Ok(Medication {
+        logs: Some(logs),
+        ..medication
+    })
 }
 
 pub async fn list_medications(
@@ -59,31 +186,24 @@ pub async fn list_medications(
     AuthUser(user_id): AuthUser,
     LocalDate(at): LocalDate,
 ) -> Result<Json<Vec<MedicationWithStats>>, AppError> {
-    let db_medications = sqlx::query_as!(
-        DbMedication,
-        r#"SELECT * FROM medications WHERE user_id=?"#,
-        user_id
-    )
-    .fetch_all(&state.pool)
-    .await?;
+    let medications = get_all_medications_with_logs(&state.pool, &user_id).await?;
 
-    let mut medications = Vec::with_capacity(db_medications.len());
-
-    for m in db_medications {
-        let medication =
-            get_medication_with_logs(&state.pool, m.id.as_ref().unwrap(), &user_id).await?;
-        let stock = medication.calculate_stock(&at);
-        let days_remaining = medication.calculate_days_remaining(&at);
-        medications.push(MedicationWithStats {
-            medication: Medication {
-                logs: None,
-                ..medication
-            },
-            stock,
-            days_remaining,
+    let medications_with_stats = medications
+        .into_iter()
+        .map(|medication| {
+            let stock = medication.calculate_stock(&at);
+            let days_remaining = medication.calculate_days_remaining(&at);
+            MedicationWithStats {
+                medication: Medication {
+                    logs: None,
+                    ..medication
+                },
+                stock,
+                days_remaining,
+            }
         })
-    }
-    Ok(Json(medications))
+        .collect();
+    Ok(Json(medications_with_stats))
 }
 
 pub async fn create_medication(

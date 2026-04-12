@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "DELETE FROM medications WHERE id=? AND user_id=?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "bfb01442c931dedf5fee65be242d8383b676447928f2e3a703951740855511a5"
+}
