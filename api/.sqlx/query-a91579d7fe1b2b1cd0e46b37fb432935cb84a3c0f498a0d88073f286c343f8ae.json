@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "UPDATE medications SET name=?, unit=?, schedule_kind=?, schedule_amount=?, schedule_day_of_week=?, warning_threshold=? WHERE id=? AND user_id=?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 8
+    },
+    "nullable": []
+  },
+  "hash": "a91579d7fe1b2b1cd0e46b37fb432935cb84a3c0f498a0d88073f286c343f8ae"
+}

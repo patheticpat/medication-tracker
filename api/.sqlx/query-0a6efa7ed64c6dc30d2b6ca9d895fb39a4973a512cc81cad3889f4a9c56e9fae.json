@@ -1,0 +1,92 @@
+{
+  "db_name": "SQLite",
+  "query": " SELECT m.id, m.user_id, m.name, m.unit, m.schedule_kind, m.schedule_amount, m.schedule_day_of_week, m.warning_threshold,\n                l.id AS log_id, l.kind AS log_kind, l.amount AS log_amount,\n                l.date AS \"log_date: NaiveDate\", l.note AS log_note\n            FROM medications m LEFT JOIN log_entries l ON m.id = l.medication_id\n            WHERE m.user_id=?\n            ORDER BY m.id, l.date, l.id",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Text"
+      },
+      {
+        "name": "user_id",
+        "ordinal": 1,
+        "type_info": "Text"
+      },
+      {
+        "name": "name",
+        "ordinal": 2,
+        "type_info": "Text"
+      },
+      {
+        "name": "unit",
+        "ordinal": 3,
+        "type_info": "Text"
+      },
+      {
+        "name": "schedule_kind",
+        "ordinal": 4,
+        "type_info": "Text"
+      },
+      {
+        "name": "schedule_amount",
+        "ordinal": 5,
+        "type_info": "Float"
+      },
+      {
+        "name": "schedule_day_of_week",
+        "ordinal": 6,
+        "type_info": "Integer"
+      },
+      {
+        "name": "warning_threshold",
+        "ordinal": 7,
+        "type_info": "Integer"
+      },
+      {
+        "name": "log_id",
+        "ordinal": 8,
+        "type_info": "Text"
+      },
+      {
+        "name": "log_kind",
+        "ordinal": 9,
+        "type_info": "Text"
+      },
+      {
+        "name": "log_amount",
+        "ordinal": 10,
+        "type_info": "Float"
+      },
+      {
+        "name": "log_date: NaiveDate",
+        "ordinal": 11,
+        "type_info": "Text"
+      },
+      {
+        "name": "log_note",
+        "ordinal": 12,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true
+    ]
+  },
+  "hash": "0a6efa7ed64c6dc30d2b6ca9d895fb39a4973a512cc81cad3889f4a9c56e9fae"
+}

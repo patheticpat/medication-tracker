@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO log_entries (id, medication_id, kind, amount, date, note) VALUES (?, ?, ?, ?, ?, ?)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 6
+    },
+    "nullable": []
+  },
+  "hash": "a5f1219c4fa85850686b2e92e0149d51242b81b7dd1ada2ed80666dd0bed3816"
+}
