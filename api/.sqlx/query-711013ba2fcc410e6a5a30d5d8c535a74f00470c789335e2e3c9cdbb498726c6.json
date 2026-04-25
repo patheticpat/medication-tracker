@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "DELETE FROM passkey_challenges WHERE user_id=?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": []
+  },
+  "hash": "711013ba2fcc410e6a5a30d5d8c535a74f00470c789335e2e3c9cdbb498726c6"
+}

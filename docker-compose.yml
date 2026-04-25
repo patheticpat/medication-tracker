@@ -25,6 +25,8 @@ services:
       - ./data:/data
     environment:
       - JWT_SECRET=${JWT_SECRET}
+      - RP_ID=${RP_ID}
+      - RP_ORIGIN=${RP_ORIGIN}
       - DATABASE_URL=sqlite:/data/medications.db
     restart: unless-stopped
 

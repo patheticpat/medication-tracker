@@ -7,6 +7,7 @@ edition = "2024"
 argon2 = { version = "0.5", features = ["std"] }
 axum = "0.8"
 axum-extra = { version = "0.12.5", features = ["typed-header"] }
+base64 = "0.22.1"
 chrono = { version = "0.4", features = ["serde"] }
 chrono-tz = "0.10.4"
 color-eyre = "0.6"
@@ -24,3 +25,6 @@ sqlx = { version = "0.8", features = [
 tokio = { version = "1", features = ["full"] }
 tower-http = { version = "0.6.8", features = ["cors"] }
 uuid = { version = "1", features = ["v7", "serde"] }
+webauthn-rs = { version = "0.5.4", features = [
+    "danger-allow-state-serialisation",
+] }

@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "UPDATE credentials SET passkey=? WHERE credential_id=?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "e87e1590b60627979b9dba158cd59f6eaba781d9f1bd4c9c4aa2ee856241f717"
+}

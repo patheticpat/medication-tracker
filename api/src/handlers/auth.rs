@@ -8,6 +8,7 @@ use jsonwebtoken::{EncodingKey, Header, encode};
 use uuid::Uuid;
 
 use crate::models::{Claims, LoginRequest};
+use crate::utils::create_jwt;
 use crate::{
     AppState,
     errors::AppError,
@@ -38,19 +39,7 @@ pub async fn register(
     .await?;
 
     // 3. JWT erstellen und zurückgeben
-    let exp = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap()
-        .as_secs() as usize
-        + 30 * 24 * 60 * 60; // 30 Tage
-    let claims = Claims { sub: id, exp };
-    let token = encode(
-        &Header::default(),
-        &claims,
-        &EncodingKey::from_secret(state.jwt_secret.as_bytes()),
-    )
-    .map_err(|_| AppError::InternalError)?;
-
+    let token = create_jwt(&id, &state.jwt_secret)?;
     Ok(Json(AuthResponse { token }))
 }
 

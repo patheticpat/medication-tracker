@@ -3,6 +3,7 @@ pub mod extractors;
 pub mod handlers;
 pub mod middleware;
 pub mod models;
+pub mod utils;
 
 use crate::handlers::{
     auth::{login, register},
@@ -10,6 +11,7 @@ use crate::handlers::{
         create_log_entry, create_medication, delete_medication, health, list_medications,
         medication_details, update_medication,
     },
+    passkey::{login_begin, login_complete, register_begin, register_complete},
 };
 use axum::{
     Router,
@@ -17,17 +19,21 @@ use axum::{
 };
 use color_eyre::Result;
 use sqlx::{SqlitePool, sqlite::SqliteConnectOptions};
-use std::{env, str::FromStr};
+use std::{env, str::FromStr, sync::Arc};
 #[cfg(debug_assertions)]
 use tower_http::cors::{Any, CorsLayer};
+use webauthn_rs::{Webauthn, WebauthnBuilder, prelude::Url};
 
 const DATABASE_URL: &str = "DATABASE_URL";
 const JWT_SECRET: &str = "JWT_SECRET";
+const RP_ID: &str = "RP_ID";
+const RP_ORIGIN: &str = "RP_ORIGIN";
 
 #[derive(Clone)]
 pub struct AppState {
     pub pool: SqlitePool,
     pub jwt_secret: String,
+    pub webauthn: Arc<Webauthn>,
 }
 
 #[tokio::main]
@@ -45,12 +51,27 @@ async fn main() -> Result<()> {
     sqlx::migrate!("./migrations").run(&pool).await?;
 
     let jwt_secret = env::var(JWT_SECRET)?;
-    let state = AppState { pool, jwt_secret };
+
+    let rp_id = env::var(RP_ID).unwrap_or_else(|_| "localhost".to_string());
+    let rp_origin = env::var(RP_ORIGIN).unwrap_or_else(|_| "http://localhost:5173".to_string());
+    let rp_origin = Url::parse(&rp_origin)?;
+    let webauthn = WebauthnBuilder::new(&rp_id, &rp_origin)?
+        .rp_name("Medication Tracker")
+        .build()?;
+    let state = AppState {
+        pool,
+        jwt_secret,
+        webauthn: Arc::new(webauthn),
+    };
 
     let app = Router::new()
         .route("/health", get(health))
         .route("/auth/login", post(login))
         .route("/auth/register", post(register))
+        .route("/auth/passkey/register/begin", post(register_begin))
+        .route("/auth/passkey/register/complete", post(register_complete))
+        .route("/auth/passkey/login/begin", post(login_begin))
+        .route("/auth/passkey/login/complete", post(login_complete))
         .route(
             "/medications",
             get(list_medications).post(create_medication),

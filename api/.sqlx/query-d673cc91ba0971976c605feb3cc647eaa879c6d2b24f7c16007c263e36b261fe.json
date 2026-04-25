@@ -1,0 +1,38 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT users.*, credentials.credential_id FROM users LEFT JOIN credentials ON users.id=credentials.user_id WHERE users.id=?",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Text"
+      },
+      {
+        "name": "username",
+        "ordinal": 1,
+        "type_info": "Text"
+      },
+      {
+        "name": "password_hash",
+        "ordinal": 2,
+        "type_info": "Text"
+      },
+      {
+        "name": "credential_id",
+        "ordinal": 3,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      true,
+      false,
+      false,
+      true
+    ]
+  },
+  "hash": "d673cc91ba0971976c605feb3cc647eaa879c6d2b24f7c16007c263e36b261fe"
+}

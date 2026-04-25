@@ -1,0 +1,32 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT users.id AS \"id!\", credentials.passkey, credentials.counter AS \"counter!: u32\" FROM users JOIN credentials ON users.id=credentials.user_id WHERE credential_id = ?",
+  "describe": {
+    "columns": [
+      {
+        "name": "id!",
+        "ordinal": 0,
+        "type_info": "Text"
+      },
+      {
+        "name": "passkey",
+        "ordinal": 1,
+        "type_info": "Text"
+      },
+      {
+        "name": "counter!: u32",
+        "ordinal": 2,
+        "type_info": "Integer"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      true,
+      false,
+      true
+    ]
+  },
+  "hash": "5726d69398880e1182cfb84c74e8d9a315b29a477d72d3e993db2de824f18b50"
+}
