@@ -155,7 +155,7 @@ pub async fn login_complete(
     // Aber: woher wissen wir hier welcher User sich anmeldet?
     let credential_id = BASE64_URL_SAFE_NO_PAD.encode(body.raw_id.as_ref());
     let row = sqlx::query!(
-        r#"SELECT users.id AS "id!", credentials.passkey, credentials.counter AS "counter!: u32" FROM users JOIN credentials ON users.id=credentials.user_id WHERE credential_id = ?"#,
+        r#"SELECT users.id AS "id!", credentials.passkey FROM users JOIN credentials ON users.id=credentials.user_id WHERE credential_id = ?"#,
         credential_id
     )
     .fetch_optional(&state.pool)
@@ -201,23 +201,21 @@ pub async fn login_complete(
     the user verification flag).
     */
 
-    let counter = authentication_result.counter();
-    if counter > 0 {
-        if counter <= row.counter {
-            return Err(AppError::Unauthorized);
-        } else {
-            // update counter in DB
-            sqlx::query!(r#"UPDATE credentials SET counter=?, last_used_at=unixepoch() WHERE credential_id=?"#, counter, credential_id).execute(&state.pool).await?;
-        }
-    }
-
-    if authentication_result.needs_update() {
-        passkey.update_credential(&authentication_result);
+    if authentication_result.needs_update()
+        && let Some(true) = passkey.update_credential(&authentication_result)
+    {
         let serialized_passkey =
             serde_json::to_string(&passkey).map_err(|_| AppError::InternalError)?;
         sqlx::query!(
-            r#"UPDATE credentials SET passkey=? WHERE credential_id=?"#,
+            r#"UPDATE credentials SET passkey=?, last_used_at=unixepoch() WHERE credential_id=?"#,
             serialized_passkey,
+            credential_id
+        )
+        .execute(&state.pool)
+        .await?;
+    } else {
+        sqlx::query!(
+            r#"UPDATE credentials SET last_used_at=unixepoch() WHERE credential_id=?"#,
             credential_id
         )
         .execute(&state.pool)
