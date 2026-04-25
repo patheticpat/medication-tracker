@@ -6,6 +6,6 @@ RUN cargo build --release
 
 FROM --platform=linux/amd64 debian:bookworm-slim
 WORKDIR /app
-COPY --from=builder /app/target/release/medication-tracker-api .
+COPY --from=builder /app/target/release/api .
 RUN mkdir -p /data
-CMD ["./medication-tracker-api"]
+CMD ["./api"]

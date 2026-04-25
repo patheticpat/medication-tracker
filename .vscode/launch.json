@@ -1,0 +1,26 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "API (cargo run)",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "cargo run",
+      "cwd": "${workspaceFolder}/api"
+    },
+    {
+      "name": "Web (bun dev)",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "bun dev",
+      "cwd": "${workspaceFolder}/web"
+    }
+  ],
+  "compounds": [
+    {
+      "name": "API + Web",
+      "configurations": ["API (cargo run)", "Web (bun dev)"],
+      "stopAll": true
+    }
+  ]
+}

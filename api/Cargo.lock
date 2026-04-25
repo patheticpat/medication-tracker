@@ -39,6 +39,27 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7f202df86484c868dbad7eaa557ef785d5c66295e41b460ef922eca0723b842c"
 
 [[package]]
+name = "api"
+version = "0.1.0"
+dependencies = [
+ "argon2",
+ "axum",
+ "axum-extra",
+ "chrono",
+ "chrono-tz",
+ "color-eyre",
+ "dotenvy",
+ "jsonwebtoken",
+ "rand_core 0.10.0",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "tokio",
+ "tower-http",
+ "uuid",
+]
+
+[[package]]
 name = "argon2"
 version = "0.5.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1179,27 +1200,6 @@ checksum = "d89e7ee0cfbedfc4da3340218492196241d89eefb6dab27de5df917a6d2e78cf"
 dependencies = [
  "cfg-if",
  "digest",
-]
-
-[[package]]
-name = "medication-tracker-api"
-version = "0.1.0"
-dependencies = [
- "argon2",
- "axum",
- "axum-extra",
- "chrono",
- "chrono-tz",
- "color-eyre",
- "dotenvy",
- "jsonwebtoken",
- "rand_core 0.10.0",
- "serde",
- "serde_json",
- "sqlx",
- "tokio",
- "tower-http",
- "uuid",
 ]
 
 [[package]]
