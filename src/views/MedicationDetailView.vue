@@ -8,6 +8,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { Trash2, Pencil } from 'lucide-vue-next'
 import EditMedicationModal from '@/components/EditMedicationModal.vue'
 import { formatAmount } from '@/api/base'
+import ClipboardButton from '@/components/ClipboardButton.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -112,6 +113,7 @@ const logEntries = computed(() => {
           >
             <Pencil class="w-4 h-4" />
           </RouterLink>
+          <ClipboardButton :text="medication.name" />
         </div>
         <p class="text-gray-500 mt-1">{{ schedule }}</p>
       </div>

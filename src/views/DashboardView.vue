@@ -2,38 +2,46 @@
 import { useMedications } from '@/stores/medications'
 import { computed, ref } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
-import { ArrowUpDown, ClipboardCopy, ClipboardCheck } from 'lucide-vue-next'
+import { ArrowUpDown } from 'lucide-vue-next'
 import AddMedicationModal from '@/components/AddMedicationModal.vue'
 import { formatAmount } from '@/api/base'
+import type { MedicationWithStats } from '@/types/medication'
+import ClipboardButton from '@/components/ClipboardButton.vue'
 
 const route = useRoute()
 const router = useRouter()
 const showModal = computed(() => route.query.add === 'true')
 
 const { data, isLoading, error } = useMedications()
-const sortOrder = ref<'alphabetical' | 'daysRemaining'>('alphabetical')
-const copied = ref(false)
+const sortOrder = ref<'alphabetical' | 'urgency'>('alphabetical')
 const filteredMedications = computed(() =>
   [...(data.value ?? [])]
     .filter((m) => m.daysRemaining <= m.warningThreshold)
     .sort((a, b) => a.name.localeCompare(b.name)),
 )
-const sortedMedications = computed(() =>
-  [...(data.value ?? [])].sort((a, b) =>
-    sortOrder.value === 'alphabetical'
-      ? a.name.localeCompare(b.name)
-      : a.daysRemaining - b.daysRemaining,
-  ),
-)
+
+const sortedMedications = computed(() => {
+  if (sortOrder.value === 'alphabetical') {
+    return [...(data.value ?? [])].sort((a, b) => a.name.localeCompare(b.name))
+  } else {
+    const [warned, good] = [...(data.value ?? [])]
+      .sort((a, b) => a.daysRemaining - b.daysRemaining)
+      .reduce<
+        [MedicationWithStats[], MedicationWithStats[]]
+      >(([warned, good], m) => (m.daysRemaining <= m.warningThreshold ? [[...warned, m], good] : [warned, [...good, m]]), [[], []])
+    return [...warned, ...good]
+  }
+})
+
 const toggleSortOrder = () => {
-  sortOrder.value = sortOrder.value === 'alphabetical' ? 'daysRemaining' : 'alphabetical'
+  sortOrder.value = sortOrder.value === 'alphabetical' ? 'urgency' : 'alphabetical'
 }
-const copyToClipboard = async () => {
-  const text = filteredMedications.value.map((m) => `- ${m.name}`).join('\n')
-  await navigator.clipboard.writeText(text)
-  copied.value = true
-  setTimeout(() => (copied.value = false), 2000)
-}
+
+const clipboardText = computed(() =>
+  filteredMedications.value.length === 1
+    ? filteredMedications.value[0]!.name
+    : filteredMedications.value.map((m) => `- ${m.name}`).join('\n'),
+)
 </script>
 
 <template>
@@ -53,15 +61,7 @@ const copyToClipboard = async () => {
     >
       <div class="flex items-center justify-between mb-3">
         <span class="font-medium text-red-800">Running low</span>
-        <button
-          @click="copyToClipboard"
-          :disabled="copied"
-          class="flex items-center gap-1.5 text-sm bg-red-100 hover:bg-red-200 text-red-700 px-3 py-1.5 rounded-md transition-colors disabled:opacity-50"
-        >
-          <ClipboardCheck v-if="copied" class="w-4 h-4" />
-          <ClipboardCopy v-else class="w-4 h-4" />
-          {{ copied ? 'Copied!' : 'Copy' }}
-        </button>
+        <ClipboardButton :text="clipboardText" />
       </div>
       <p class="text-sm text-red-700">
         {{ filteredMedications.map((m) => `${m.name} (${m.daysRemaining}d)`).join(' · ') }}
@@ -74,7 +74,7 @@ const copyToClipboard = async () => {
         class="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 transition-colors"
       >
         <ArrowUpDown class="w-4 h-4" />
-        {{ sortOrder === 'alphabetical' ? 'A–Z' : 'By days left' }}
+        {{ sortOrder === 'alphabetical' ? 'A–Z' : 'By urgency' }}
       </button>
     </div>
 
@@ -94,7 +94,8 @@ const copyToClipboard = async () => {
             <span class="text-sm text-gray-500">{{ medication.daysRemaining }} days left</span>
           </div>
           <div class="mt-1 mb-3 text-sm text-gray-500">
-            <span class="text-lg mr-1">{{ formatAmount(medication.stock) }}</span> {{ medication.unit }} remaining
+            <span class="text-lg mr-1">{{ formatAmount(medication.stock) }}</span>
+            {{ medication.unit }} remaining
           </div>
           <div class="mt-auto h-1.5 bg-gray-200 rounded-full overflow-hidden">
             <div
@@ -112,12 +113,12 @@ const copyToClipboard = async () => {
         </RouterLink>
       </li>
     </ul>
-  <RouterLink
-    :to="{ name: 'dashboard', query: { add: 'true' } }"
-    class="fixed bottom-6 right-6 bg-amber-400 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg text-2xl hover:bg-amber-500 transition-colors"
-  >
-    +
-  </RouterLink>
+    <RouterLink
+      :to="{ name: 'dashboard', query: { add: 'true' } }"
+      class="fixed bottom-6 right-6 bg-amber-400 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg text-2xl hover:bg-amber-500 transition-colors"
+    >
+      +
+    </RouterLink>
   </div>
   <Teleport to="body">
     <div
