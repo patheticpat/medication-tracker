@@ -1,0 +1,6 @@
+@import 'tailwindcss';
+@source './src';
+
+* {
+  font-family: 'Lato', sans-serif;
+}
