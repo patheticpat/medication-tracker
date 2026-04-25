@@ -1,9 +1,13 @@
 <script setup lang="ts">
 import { login } from '@/api/auth'
+import { loginWithPasskey } from '@/api/passkey'
 import { ref, computed } from 'vue'
 import { useRouter, RouterLink } from 'vue-router'
+import { KeyRound } from 'lucide-vue-next'
+import { useAuthStore } from '@/stores/auth'
 
 const router = useRouter()
+const store = useAuthStore()
 const username = ref('')
 const password = ref('')
 const error = ref('')
@@ -18,6 +22,20 @@ const handleSubmit = async () => {
     router.replace({ name: 'dashboard' })
   } catch {
     error.value = 'Invalid username or password'
+  } finally {
+    isLoading.value = false
+  }
+}
+
+const handlePasskeyLogin = async () => {
+  error.value = ''
+  isLoading.value = true
+  try {
+    const response = await loginWithPasskey(username.value)
+    store.login(response.token)
+    router.replace({ name: 'dashboard' })
+  } catch {
+    error.value = 'Passkey login failed'
   } finally {
     isLoading.value = false
   }
@@ -52,6 +70,23 @@ const handleSubmit = async () => {
           class="bg-blue-600 text-white text-sm rounded-md px-4 py-2 hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Login
+        </button>
+        <div class="relative my-4">
+          <div class="absolute inset-0 flex items-center">
+            <div class="w-full border-t border-gray-200"></div>
+          </div>
+          <div class="relative flex justify-center text-sm">
+            <span class="px-2 bg-white text-gray-400">oder</span>
+          </div>
+        </div>
+
+        <button
+          @click="handlePasskeyLogin"
+          :disabled="isLoading || username.length == 0"
+          class="w-full flex items-center justify-center gap-2 border border-gray-200 rounded-md px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+        >
+          <KeyRound class="w-4 h-4" />
+          Mit Passkey anmelden
         </button>
       </form>
 

@@ -27,13 +27,22 @@ function handleLogout() {
         >
           <span class="font-semibold text-gray-800">💊 Medication Tracker</span>
         </RouterLink>
-        <button
-          v-if="isLoggedIn"
-          @click="handleLogout"
-          class="text-sm text-gray-500 hover:text-gray-700 transition-colors"
-        >
-          Logout
-        </button>
+        <div class="flex items-center gap-4">
+          <RouterLink
+            :to="{ name: 'settings' }"
+            class="text-sm text-gray-500 hover:text-gray-700 transition-colors"
+            v-if="isLoggedIn"
+          >
+            Settings
+          </RouterLink>
+          <button
+            v-if="isLoggedIn"
+            @click="handleLogout"
+            class="text-sm text-gray-500 hover:text-gray-700 transition-colors"
+          >
+            Logout
+          </button>
+        </div>
       </div>
     </nav>
     <main class="max-w-2xl mx-auto px-6 py-8">

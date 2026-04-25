@@ -113,13 +113,14 @@ const clipboardText = computed(() =>
         </RouterLink>
       </li>
     </ul>
-    <RouterLink
-      :to="{ name: 'dashboard', query: { add: 'true' } }"
-      class="fixed bottom-6 right-6 bg-amber-400 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg text-2xl hover:bg-amber-500 transition-colors"
-    >
-      +
-    </RouterLink>
   </div>
+  <RouterLink
+    v-if="!isLoading && !error"
+    :to="{ name: 'dashboard', query: { add: 'true' } }"
+    class="fixed bottom-6 right-6 bg-amber-400 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg text-2xl hover:bg-amber-500 transition-colors"
+  >
+    +
+  </RouterLink>
   <Teleport to="body">
     <div
       v-if="showModal"
