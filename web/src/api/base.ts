@@ -1,5 +1,5 @@
-import router from "@/router"
-import { useAuthStore } from "@/stores/auth"
+import router from '@/router'
+import { useAuthStore } from '@/stores/auth'
 
 export const BASE_URL = import.meta.env.VITE_API_BASE_URL
 
@@ -17,8 +17,8 @@ export async function handleResponse<T>(r: Response): Promise<T> {
   if (r.status === 401) {
     const authStore = useAuthStore()
     authStore.logout()
-    router.replace({name: 'login'})
-    throw new Error("Unaithorized")
+    router.replace({ name: 'login' })
+    throw new Error('Unauthorized')
   }
   if (!r.ok) {
     throw new Error(`API Error: ${r.status}`)
