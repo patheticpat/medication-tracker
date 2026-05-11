@@ -1,13 +1,10 @@
-use std::time::{SystemTime, UNIX_EPOCH};
-
 use argon2::password_hash::SaltString;
 use argon2::password_hash::rand_core::OsRng;
 use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
 use axum::{Json, extract::State};
-use jsonwebtoken::{EncodingKey, Header, encode};
 use uuid::Uuid;
 
-use crate::models::{Claims, LoginRequest};
+use crate::models::LoginRequest;
 use crate::utils::create_jwt;
 use crate::{
     AppState,
@@ -57,22 +54,7 @@ pub async fn login(
         Argon2::default()
             .verify_password(body.password.as_bytes(), &parsed_hash)
             .map_err(|_| AppError::Unauthorized)?;
-        let exp = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap()
-            .as_secs() as usize
-            + 30 * 24 * 60 * 60; // 30 Tage
-        let claims = Claims {
-            sub: user.id.unwrap(),
-            exp,
-        };
-        let token = encode(
-            &Header::default(),
-            &claims,
-            &EncodingKey::from_secret(state.jwt_secret.as_bytes()),
-        )
-        .map_err(|_| AppError::InternalError)?;
-
+        let token = create_jwt(user.id.as_ref().unwrap(), &state.jwt_secret)?;
         Ok(Json(AuthResponse { token }))
     } else {
         Err(AppError::Unauthorized)
