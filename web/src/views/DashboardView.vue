@@ -2,21 +2,24 @@
 import { useMedications } from '@/stores/medications'
 import { computed, ref } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
-import { ArrowUpDown } from 'lucide-vue-next'
+import { ArrowUpDown, Bell, BellOff } from 'lucide-vue-next'
 import AddMedicationModal from '@/components/AddMedicationModal.vue'
 import { formatAmount } from '@/api/base'
 import type { MedicationWithStats } from '@/types/medication'
 import ClipboardButton from '@/components/ClipboardButton.vue'
+import { useSnooze } from '@/composables/useSnooze'
 
 const route = useRoute()
 const router = useRouter()
 const showModal = computed(() => route.query.add === 'true')
 
 const { data, isLoading, error } = useMedications()
+const { snooze, unSnooze, isSnoozed } = useSnooze()
+
 const sortOrder = ref<'alphabetical' | 'urgency'>('alphabetical')
 const filteredMedications = computed(() =>
   [...(data.value ?? [])]
-    .filter((m) => m.daysRemaining <= m.warningThreshold)
+    .filter((m) => m.daysRemaining <= m.warningThreshold && !isSnoozed.value(m.id))
     .sort((a, b) => a.name.localeCompare(b.name)),
 )
 
@@ -83,15 +86,28 @@ const clipboardText = computed(() =>
         <RouterLink
           :to="{ name: 'medications-details', params: { id: medication.id } }"
           :class="[
-            'block h-full flex flex-col bg-white rounded-lg border border-gray-200 px-5 py-4 hover:shadow-sm transition-all',
+            'block h-full flex flex-col bg-white rounded-lg border border-gray-200 px-5 py-4 hover:shadow-sm transition-all border-t-4',
             medication.daysRemaining <= medication.warningThreshold
-              ? 'border-t-4 border-t-red-400'
-              : 'border-t-4 border-t-green-500',
+              ? isSnoozed(medication.id)
+                ? 'border-t-amber-500'
+                : 'border-t-red-400'
+              : 'border-t-green-500',
           ]"
         >
           <div class="flex items-center justify-between">
             <span class="font-medium text-gray-900">{{ medication.name }}</span>
-            <span class="text-sm text-gray-500">{{ medication.daysRemaining }} days left</span>
+            <div class="flex items-center gap-2">
+              <span class="text-sm text-gray-500">{{ medication.daysRemaining }} days left</span>
+              <button v-if="isSnoozed(medication.id)" @click.prevent.stop="unSnooze(medication.id)">
+                <BellOff class="w-4 h-4 text-amber-500" />
+              </button>
+              <button
+                v-else-if="medication.daysRemaining <= medication.warningThreshold"
+                @click.prevent.stop="snooze(medication.id)"
+              >
+                <Bell class="w-4 h-4 text-red-400" />
+              </button>
+            </div>
           </div>
           <div class="mt-1 mb-3 text-sm text-gray-500">
             <span class="text-lg mr-1">{{ formatAmount(medication.stock) }}</span>
@@ -102,7 +118,9 @@ const clipboardText = computed(() =>
               class="h-full rounded-full transition-all"
               :class="
                 medication.daysRemaining <= medication.warningThreshold
-                  ? 'bg-red-400'
+                  ? isSnoozed(medication.id)
+                    ? 'bg-amber-500'
+                    : 'bg-red-400'
                   : 'bg-green-500'
               "
               :style="{

@@ -9,6 +9,7 @@ import { Trash2, Pencil } from 'lucide-vue-next'
 import EditMedicationModal from '@/components/EditMedicationModal.vue'
 import { formatAmount } from '@/api/base'
 import ClipboardButton from '@/components/ClipboardButton.vue'
+import { useSnooze } from '@/composables/useSnooze'
 
 const router = useRouter()
 const route = useRoute()
@@ -31,6 +32,8 @@ const { mutateAsync: createLogAsync } = useMutation({
   mutation: (log: CreateLogEntry) => createLogEntry(route.params.id as string, log),
   onSettled: () => cache.invalidateQueries({ key: MEDICATION_KEYS.root }),
 })
+
+const { isSnoozed } = useSnooze()
 
 const confirmDelete = ref(false)
 
@@ -141,7 +144,9 @@ const logEntries = computed(() => {
           class="font-medium"
           :class="
             medication.daysRemaining <= medication.warningThreshold
-              ? 'text-red-500'
+              ? isSnoozed(medication.id)
+                ? 'text-amber-500'
+                : 'text-red-500'
               : 'text-green-600'
           "
         >
