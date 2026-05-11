@@ -5,7 +5,7 @@ import type { CreateLogEntry } from '@/types/medication'
 import { useMutation, useQuery, useQueryCache } from '@pinia/colada'
 import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Trash2, Pencil } from 'lucide-vue-next'
+import { Trash2, Pencil, Bell, BellOff } from 'lucide-vue-next'
 import EditMedicationModal from '@/components/EditMedicationModal.vue'
 import { formatAmount } from '@/api/base'
 import ClipboardButton from '@/components/ClipboardButton.vue'
@@ -33,7 +33,7 @@ const { mutateAsync: createLogAsync } = useMutation({
   onSettled: () => cache.invalidateQueries({ key: MEDICATION_KEYS.root }),
 })
 
-const { isSnoozed } = useSnooze()
+const { isSnoozed, snooze, unSnooze } = useSnooze()
 
 const confirmDelete = ref(false)
 
@@ -106,28 +106,10 @@ const logEntries = computed(() => {
       <div>
         <div class="flex items-center gap-2">
           <h1 class="text-2xl font-bold text-gray-900">{{ medication.name }}</h1>
-          <RouterLink
-            :to="{
-              name: 'medications-details',
-              params: { id: medication.id },
-              query: { edit: 'true' },
-            }"
-            class="text-gray-400 hover:text-gray-600 transition-colors"
-          >
-            <Pencil class="w-4 h-4" />
-          </RouterLink>
           <ClipboardButton :text="medication.name" />
         </div>
         <p class="text-gray-500 mt-1">{{ schedule }}</p>
       </div>
-      <button
-        @click="handleDelete"
-        class="flex items-center gap-1.5 transition-colors p-1"
-        :class="confirmDelete ? 'text-red-600' : 'text-red-400 hover:text-red-600'"
-      >
-        <Trash2 class="w-5 h-5" />
-        <span v-if="confirmDelete" class="text-sm font-medium">Confirm?</span>
-      </button>
     </div>
 
     <!-- Stock Info -->
@@ -239,6 +221,51 @@ const logEntries = computed(() => {
           {{ medication.unit }}</span
         >
       </div>
+    </div>
+    <!-- Aktionen -->
+    <div class="mt-8 pt-6 border-t border-gray-200 flex items-center justify-between">
+      <RouterLink
+        :to="{
+          name: 'medications-details',
+          params: { id: medication.id },
+          query: { edit: 'true' },
+        }"
+        class="flex items-center gap-1.5 text-sm text-gray-600 hover:text-gray-900 border border-gray-200 rounded-md px-3 py-1.5 transition-colors"
+      >
+        <Pencil class="w-4 h-4" />
+        Edit
+      </RouterLink>
+
+      <button
+        v-if="isSnoozed(medication.id) && medication.daysRemaining <= medication.warningThreshold"
+        @click="unSnooze(medication.id)"
+        class="flex items-center gap-1.5 text-sm text-amber-500 hover:text-amber-600 border border-amber-200 rounded-md px-3 py-1.5 transition-colors"
+      >
+        <Bell class="w-4 h-4" />
+        Unsnooze
+      </button>
+
+      <button
+        v-if="!isSnoozed(medication.id) && medication.daysRemaining <= medication.warningThreshold"
+        @click="snooze(medication.id)"
+        class="flex items-center gap-1.5 text-sm text-amber-500 hover:text-amber-600 border border-amber-200 rounded-md px-3 py-1.5 transition-colors"
+      >
+        <BellOff class="w-4 h-4" />
+        Snooze
+      </button>
+
+      <button
+        @click="handleDelete"
+        class="flex items-center gap-1.5 text-sm transition-colors px-3 py-1.5 rounded-md border"
+        :class="
+          confirmDelete
+            ? 'bg-red-600 text-white border-red-600'
+            : 'text-red-500 border-red-200 hover:bg-red-50'
+        "
+      >
+        <Trash2 class="w-4 h-4" />
+        {{ confirmDelete ? 'Confirm delete?' : 'Delete' }}
+      </button>
     </div>
   </div>
 
