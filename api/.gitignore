@@ -2,3 +2,4 @@
 medications.db
 medications.db-shm
 medications.db-wal
+.env
