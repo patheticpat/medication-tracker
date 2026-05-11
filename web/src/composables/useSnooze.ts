@@ -4,7 +4,14 @@ export function useSnooze() {
   const SNOOZE_KEY = 'medication-snoozes'
   const SNOOZE_DURATION_IN_DAYS = 7
 
-  const snoozes = ref<Record<string, string>>(JSON.parse(localStorage.getItem(SNOOZE_KEY) || '{}'))
+  const loadSnoozes = () => {
+    try {
+      return JSON.parse(localStorage.getItem(SNOOZE_KEY) || '{}')
+    } catch {
+      return {}
+    }
+  }
+  const snoozes = ref<Record<string, string>>(loadSnoozes())
 
   watch(snoozes, (newSnoozes) => localStorage.setItem(SNOOZE_KEY, JSON.stringify(newSnoozes)))
 
