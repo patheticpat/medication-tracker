@@ -26,6 +26,7 @@ const {
 
 const { mutateAsync: deleteAsync } = useMutation({
   mutation: () => deleteMedication(route.params.id as string),
+  onSettled: () => unSnooze(route.params.id as string),
 })
 
 const { mutateAsync: createLogAsync } = useMutation({
