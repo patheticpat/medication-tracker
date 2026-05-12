@@ -143,7 +143,7 @@ const logEntries = computed(() => {
         >
       </div>
     </div>
-    <div class="grid grid-cols-2 gap-3 mb-6">
+    <div class="grid grid-cols-2 gap-3 mb-2">
       <!-- Refill -->
       <div class="bg-white rounded-lg border border-gray-200 px-5 py-4">
         <h2 class="font-medium text-gray-900 mb-3">Refill</h2>
@@ -198,33 +198,8 @@ const logEntries = computed(() => {
         </form>
       </div>
     </div>
-    <h2 class="font-medium text-gray-900 mb-3">History</h2>
-    <div class="bg-white rounded-lg border border-gray-200 divide-y divide-gray-100">
-      <div v-for="l in logEntries" :key="l.id" class="px-5 py-3 flex items-center justify-between">
-        <div class="flex items-center gap-3">
-          <span
-            class="text-xs font-medium px-2 py-0.5 rounded-full w-16 text-center"
-            :class="
-              l.kind === 'refill'
-                ? 'bg-emerald-100 text-emerald-700'
-                : 'bg-amber-100 text-amber-700'
-            "
-          >
-            {{ l.kind }}
-          </span>
-          <div class="flex flex-col">
-            <span class="text-sm text-gray-500">{{ l.date }}</span>
-            <span v-if="l.note" class="text-xs text-gray-400">{{ l.note }}</span>
-          </div>
-        </div>
-        <span class="text-sm font-medium text-gray-900"
-          >{{ l.kind === 'refill' ? '+ ' : '' }}{{ formatAmount(l.amount) }}
-          {{ medication.unit }}</span
-        >
-      </div>
-    </div>
     <!-- Aktionen -->
-    <div class="mt-8 pt-6 border-t border-gray-200 flex items-center justify-between">
+    <div class="mt-2 mb-6 pt-6 flex items-center justify-between">
       <RouterLink
         :to="{
           name: 'medications-details',
@@ -267,6 +242,31 @@ const logEntries = computed(() => {
         <Trash2 class="w-4 h-4" />
         {{ confirmDelete ? 'Confirm delete?' : 'Delete' }}
       </button>
+    </div>
+    <h2 class="font-medium text-gray-900 mb-3">History</h2>
+    <div class="bg-white rounded-lg border border-gray-200 divide-y divide-gray-100">
+      <div v-for="l in logEntries" :key="l.id" class="px-5 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <span
+            class="text-xs font-medium px-2 py-0.5 rounded-full w-16 text-center"
+            :class="
+              l.kind === 'refill'
+                ? 'bg-emerald-100 text-emerald-700'
+                : 'bg-amber-100 text-amber-700'
+            "
+          >
+            {{ l.kind }}
+          </span>
+          <div class="flex flex-col">
+            <span class="text-sm text-gray-500">{{ l.date }}</span>
+            <span v-if="l.note" class="text-xs text-gray-400">{{ l.note }}</span>
+          </div>
+        </div>
+        <span class="text-sm font-medium text-gray-900"
+          >{{ l.kind === 'refill' ? '+ ' : '' }}{{ formatAmount(l.amount) }}
+          {{ medication.unit }}</span
+        >
+      </div>
     </div>
   </div>
 
