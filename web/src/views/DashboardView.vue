@@ -97,8 +97,14 @@ const clipboardText = computed(() =>
           <div class="flex items-center justify-between">
             <span class="font-medium text-gray-900">{{ medication.name }}</span>
             <div class="flex items-center gap-2">
-              <span class="text-sm text-gray-500">{{ medication.daysRemaining }} days left</span>
-              <button v-if="isSnoozed(medication.id)" @click.prevent.stop="unSnooze(medication.id)">
+              <span class="text-sm text-gray-500">{{ medication.daysRemaining }} days</span>
+              <button
+                v-if="
+                  isSnoozed(medication.id) &&
+                  medication.daysRemaining <= medication.warningThreshold
+                "
+                @click.prevent.stop="unSnooze(medication.id)"
+              >
                 <BellOff class="w-4 h-4 text-amber-500" />
               </button>
               <button
