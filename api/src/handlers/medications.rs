@@ -20,8 +20,11 @@ use crate::{
     },
 };
 
-pub async fn health() -> &'static str {
-    "ok"
+pub async fn health() -> impl IntoResponse {
+    Json(serde_json::json!({
+        "status": "ok",
+        "version": env!("GIT_SHA")
+    }))
 }
 
 async fn get_all_medications_with_logs(

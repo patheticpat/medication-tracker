@@ -5,6 +5,8 @@ WORKDIR /app
 COPY Cargo.toml Cargo.lock ./
 RUN mkdir src && echo "fn main() {}" > src/main.rs
 ENV SQLX_OFFLINE=true
+ARG GIT_SHA=unknown
+ENV GIT_SHA=$GIT_SHA
 RUN cargo build --release
 RUN rm src/main.rs
 
