@@ -1,6 +1,14 @@
 <script setup lang="ts">
+import { apiUrl } from '@/api/base'
 import { registerPasskey } from '@/api/passkey'
 import { KeyRound } from 'lucide-vue-next'
+import { onMounted, ref } from 'vue'
+
+declare const __GIT_SHA__: string
+
+const backendSHA = ref<string>('unknown')
+const frontendSHA = __GIT_SHA__
+
 const handleAddPasskey = async () => {
   try {
     await registerPasskey()
@@ -8,6 +16,18 @@ const handleAddPasskey = async () => {
     console.error(e)
   }
 }
+
+onMounted(async () => {
+  try {
+    const r = await fetch(apiUrl('/health'))
+    const data = await r.json()
+    backendSHA.value = data.version ?? 'unknown'
+  } catch {
+    backendSHA.value = 'unknown'
+  }
+})
+
+const short = (sha: string | null) => sha?.slice(0, 7) ?? 'unknown'
 </script>
 
 <template>
@@ -24,6 +44,20 @@ const handleAddPasskey = async () => {
         <KeyRound class="w-4 h-4" />
         Neuen Passkey hinzufügen
       </button>
+    </div>
+
+    <div class="px-5 py-4">
+      <h2 class="font-medium text-gray-900 mb-3">Version</h2>
+      <div class="flex flex-col gap-1.5 font-mono text-sm text-gray-500">
+        <div class="flex justify-between">
+          <span>Frontend</span>
+          <span>{{ short(frontendSHA) }}</span>
+        </div>
+        <div class="flex justify-between">
+          <span>Backend</span>
+          <span>{{ short(backendSHA) }}</span>
+        </div>
+      </div>
     </div>
   </div>
 </template>

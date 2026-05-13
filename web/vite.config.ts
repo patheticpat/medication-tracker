@@ -13,4 +13,7 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
+  define: {
+    __GIT_SHA__: JSON.stringify(process.env.GIT_SHA ?? 'unknown'),
+  },
 })
