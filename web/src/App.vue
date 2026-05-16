@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useMidnightRefresh } from './composables/useMidnightRefresh'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from './stores/auth'
 import { storeToRefs } from 'pinia'
 
@@ -9,6 +9,7 @@ const { isLoggedIn } = storeToRefs(authStore)
 const { logout } = authStore
 
 useMidnightRefresh()
+const route = useRoute()
 const router = useRouter()
 
 function handleLogout() {
@@ -16,10 +17,8 @@ function handleLogout() {
   router.replace({ name: 'login' })
 }
 
-const handleLogoClick = () => {
-  if (window.history.state?.back) {
-    router.go(-1)
-  } else {
+function handleLogoClick() {
+  if (route.name !== 'dashboard') {
     router.replace({ name: 'dashboard' })
   }
 }
