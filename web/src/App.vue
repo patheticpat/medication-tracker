@@ -15,18 +15,26 @@ function handleLogout() {
   logout()
   router.replace({ name: 'login' })
 }
+
+const handleLogoClick = () => {
+  if (window.history.state?.back) {
+    router.go(-1)
+  } else {
+    router.replace({ name: 'dashboard' })
+  }
+}
 </script>
 
 <template>
   <div class="min-h-screen bg-gray-50">
     <nav class="sticky top-0 z-10 bg-white border-b border-gray-200 px-6 py-4 shadow-sm">
       <div class="max-w-2xl mx-auto flex items-center justify-between">
-        <RouterLink
-          :to="{ name: 'dashboard' }"
-          class="font-bold text-xl text-gray-900 hover:text-gray-700 transition-colors"
+        <button
+          @click="handleLogoClick"
+          class="font-bold text-xl text-gray-900 hover:text-gray-700 transition-colors cursor-pointer"
         >
           <span class="font-semibold text-gray-800">💊 Medication Tracker</span>
-        </RouterLink>
+        </button>
         <div class="flex items-center gap-4">
           <RouterLink
             :to="{ name: 'settings' }"
