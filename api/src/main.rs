@@ -89,6 +89,7 @@ async fn main() -> Result<()> {
         )
         .route("/medications/{id}/log", post(create_log_entry))
         .with_state(state);
+
     #[cfg(debug_assertions)]
     let app = app.layer(
         CorsLayer::new()
