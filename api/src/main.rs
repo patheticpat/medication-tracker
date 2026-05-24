@@ -11,11 +11,14 @@ use crate::handlers::{
         create_log_entry, create_medication, delete_medication, health, list_medications,
         medication_details, update_medication,
     },
-    passkey::{login_begin, login_complete, register_begin, register_complete},
+    passkey::{
+        delete_passkey, list_passkeys, login_begin, login_complete, register_begin,
+        register_complete,
+    },
 };
 use axum::{
     Router,
-    routing::{get, post},
+    routing::{delete, get, post},
 };
 use color_eyre::Result;
 use sqlx::{SqlitePool, sqlite::SqliteConnectOptions};
@@ -72,6 +75,8 @@ async fn main() -> Result<()> {
         .route("/auth/passkey/register/complete", post(register_complete))
         .route("/auth/passkey/login/begin", post(login_begin))
         .route("/auth/passkey/login/complete", post(login_complete))
+        .route("/auth/passkeys", get(list_passkeys))
+        .route("/auth/passkeys/{credential_id}", delete(delete_passkey))
         .route(
             "/medications",
             get(list_medications).post(create_medication),

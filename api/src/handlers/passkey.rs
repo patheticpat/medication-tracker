@@ -1,4 +1,8 @@
-use axum::{Json, extract::State, http::StatusCode};
+use axum::{
+    Json,
+    extract::{Path, State},
+    http::StatusCode,
+};
 use base64::{Engine, prelude::BASE64_URL_SAFE_NO_PAD};
 use webauthn_rs::prelude::{
     CreationChallengeResponse, CredentialID, Passkey, PublicKeyCredential,
@@ -9,7 +13,7 @@ use crate::{
     AppState,
     errors::AppError,
     middleware::AuthUser,
-    models::{AuthResponse, PasskeyLoginRequest},
+    models::{AuthResponse, PasskeyInfo, PasskeyLoginRequest},
     utils::create_jwt,
 };
 
@@ -225,4 +229,37 @@ pub async fn login_complete(
     // At this point we are ready to create and return an auth token for the user
     let token = create_jwt(user_id, &state.jwt_secret)?;
     Ok(Json(AuthResponse { token }))
+}
+
+pub async fn list_passkeys(
+    State(state): State<AppState>,
+    AuthUser(user_id): AuthUser,
+) -> Result<Json<Vec<PasskeyInfo>>, AppError> {
+    let passkeys = sqlx::query_as!(
+        PasskeyInfo,
+        r#"SELECT credential_id AS "credential_id!", added_at, last_used_at FROM credentials WHERE user_id=?"#,
+        user_id
+    )
+    .fetch_all(&state.pool)
+    .await?;
+    Ok(Json(passkeys))
+}
+
+pub async fn delete_passkey(
+    State(state): State<AppState>,
+    AuthUser(user_id): AuthUser,
+    Path(credential_id): Path<String>,
+) -> Result<StatusCode, AppError> {
+    let r = sqlx::query!(
+        r#"DELETE FROM credentials WHERE credential_id=? and user_id=?"#,
+        credential_id,
+        user_id
+    )
+    .execute(&state.pool)
+    .await?;
+    if r.rows_affected() != 1 {
+        Err(AppError::NotFound)
+    } else {
+        Ok(StatusCode::NO_CONTENT)
+    }
 }

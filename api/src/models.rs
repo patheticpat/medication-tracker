@@ -232,6 +232,13 @@ pub struct Claims {
     pub exp: usize,  // expiry timestamp
 }
 
+#[derive(serde::Serialize)]
+pub struct PasskeyInfo {
+    pub credential_id: String,
+    pub added_at: i64, // Unix timestamp
+    pub last_used_at: Option<i64>,
+}
+
 impl Medication {
     fn calculate_consumption(&self, from: &NaiveDate, to: &NaiveDate) -> f64 {
         let from = *from + TimeDelta::days(1);
