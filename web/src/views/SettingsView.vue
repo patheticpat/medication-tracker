@@ -38,6 +38,7 @@ const currentPassword = ref('')
 const newPassword = ref('')
 const confirmPassword = ref('')
 const passwordError = ref('')
+const passwordSuccess = ref(false)
 
 const { mutateAsync: changePasswordAsync } = useMutation({
   mutation: (payload: { current_password: string; new_password: string }) =>
@@ -59,6 +60,8 @@ const handleChangePassword = async () => {
       current_password: currentPassword.value,
       new_password: newPassword.value,
     })
+    passwordSuccess.value = true
+    setTimeout(() => (passwordSuccess.value = false), 3000)
   } catch {
     passwordError.value = 'Current password is incorrect'
   } finally {
@@ -161,6 +164,9 @@ const shortId = (id: string) => id.slice(0, 8) + '…'
         </div>
       </div>
       <p v-if="passwordError" class="text-xs text-red-500 mt-2">{{ passwordError }}</p>
+      <p v-if="passwordSuccess" class="text-xs text-green-500 mt-2">
+        Password updated successfully
+      </p>
       <button
         @click="handleChangePassword"
         :disabled="newPassword !== confirmPassword || !currentPassword || !newPassword"
