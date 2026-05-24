@@ -5,6 +5,7 @@ import { KeyRound } from 'lucide-vue-next'
 import { onMounted, ref } from 'vue'
 import { useQuery, useQueryCache, useMutation } from '@pinia/colada'
 import { Trash2 } from 'lucide-vue-next'
+import { changePassword } from '@/api/auth'
 
 declare const __GIT_SHA__: string
 
@@ -30,6 +31,40 @@ const handleAddPasskey = async () => {
     queryCache.invalidateQueries({ key: ['PASSKEYS'] })
   } catch (e) {
     console.error(e)
+  }
+}
+
+const currentPassword = ref('')
+const newPassword = ref('')
+const confirmPassword = ref('')
+const passwordError = ref('')
+
+const { mutateAsync: changePasswordAsync } = useMutation({
+  mutation: (payload: { current_password: string; new_password: string }) =>
+    changePassword(payload),
+})
+
+const handleChangePassword = async () => {
+  passwordError.value = ''
+  if (newPassword.value !== confirmPassword.value) {
+    passwordError.value = 'Passwords do not match'
+    return
+  }
+  if (!currentPassword.value || !newPassword.value) {
+    passwordError.value = 'Please fill in all fields'
+    return
+  }
+  try {
+    await changePasswordAsync({
+      current_password: currentPassword.value,
+      new_password: newPassword.value,
+    })
+  } catch {
+    passwordError.value = 'Current password is incorrect'
+  } finally {
+    currentPassword.value = ''
+    newPassword.value = ''
+    confirmPassword.value = ''
   }
 }
 
@@ -95,6 +130,44 @@ const shortId = (id: string) => id.slice(0, 8) + '…'
         </li>
       </ul>
       <p v-else-if="isLoading" class="text-sm text-gray-400">Loading...</p>
+    </div>
+
+    <div class="px-5 py-4">
+      <h2 class="font-medium text-gray-900 mb-1">Change Password</h2>
+      <div class="divide-y divide-gray-100">
+        <div class="py-3">
+          <label class="text-xs text-gray-500">Current password</label>
+          <input
+            v-model="currentPassword"
+            type="password"
+            class="mt-1 block w-full text-sm border border-gray-200 rounded px-3 py-2"
+          />
+        </div>
+        <div class="py-3">
+          <label class="text-xs text-gray-500">New password</label>
+          <input
+            v-model="newPassword"
+            type="password"
+            class="mt-1 block w-full text-sm border border-gray-200 rounded px-3 py-2"
+          />
+        </div>
+        <div class="py-3">
+          <label class="text-xs text-gray-500">Confirm new password</label>
+          <input
+            v-model="confirmPassword"
+            type="password"
+            class="mt-1 block w-full text-sm border border-gray-200 rounded px-3 py-2"
+          />
+        </div>
+      </div>
+      <p v-if="passwordError" class="text-xs text-red-500 mt-2">{{ passwordError }}</p>
+      <button
+        @click="handleChangePassword"
+        :disabled="newPassword !== confirmPassword || !currentPassword || !newPassword"
+        class="mt-3 text-sm text-white bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        Update password
+      </button>
     </div>
 
     <div class="px-5 py-4">

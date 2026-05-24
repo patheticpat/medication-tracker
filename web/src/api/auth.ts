@@ -1,5 +1,5 @@
 import type { AuthRequest, AuthResponse } from '@/types/auth'
-import { apiUrl, handleResponse } from './base'
+import { apiUrl, authHeaders, handleResponse } from './base'
 import { useAuthStore } from '@/stores/auth'
 
 const store = useAuthStore()
@@ -26,4 +26,18 @@ export const register = async (request: AuthRequest): Promise<AuthResponse> => {
   const response = await handleResponse<AuthResponse>(r)
   store.login(response.token)
   return response
+}
+
+export const changePassword = async (payload: {
+  current_password: string
+  new_password: string
+}): Promise<void> => {
+  // PUT /auth/password mit authHeaders(true) und JSON body
+  const r = await fetch(apiUrl('/auth/password'), {
+    method: 'PUT',
+    headers: authHeaders(true),
+    body: JSON.stringify(payload),
+  })
+
+  return await handleResponse(r)
 }
