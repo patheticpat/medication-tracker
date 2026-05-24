@@ -6,7 +6,7 @@ pub mod models;
 pub mod utils;
 
 use crate::handlers::{
-    auth::{login, register},
+    auth::{change_password, login, register},
     medications::{
         create_log_entry, create_medication, delete_medication, health, list_medications,
         medication_details, update_medication,
@@ -18,7 +18,7 @@ use crate::handlers::{
 };
 use axum::{
     Router,
-    routing::{delete, get, post},
+    routing::{delete, get, post, put},
 };
 use color_eyre::Result;
 use sqlx::{SqlitePool, sqlite::SqliteConnectOptions};
@@ -71,6 +71,7 @@ async fn main() -> Result<()> {
         .route("/health", get(health))
         .route("/auth/login", post(login))
         .route("/auth/register", post(register))
+        .route("/auth/password", put(change_password))
         .route("/auth/passkey/register/begin", post(register_begin))
         .route("/auth/passkey/register/complete", post(register_complete))
         .route("/auth/passkey/login/begin", post(login_begin))

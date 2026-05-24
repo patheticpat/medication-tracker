@@ -232,11 +232,17 @@ pub struct Claims {
     pub exp: usize,  // expiry timestamp
 }
 
-#[derive(serde::Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct PasskeyInfo {
     pub credential_id: String,
     pub added_at: i64, // Unix timestamp
     pub last_used_at: Option<i64>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ChangePasswordRequest {
+    pub current_password: String,
+    pub new_password: String,
 }
 
 impl Medication {
