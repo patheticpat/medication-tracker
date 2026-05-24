@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useMedications } from '@/stores/medications'
-import { computed, ref } from 'vue'
+import { useUI } from '@/stores/ui'
+import { computed } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { ArrowUpDown, Bell, BellOff } from 'lucide-vue-next'
 import AddMedicationModal from '@/components/AddMedicationModal.vue'
@@ -9,6 +10,7 @@ import type { MedicationWithStats } from '@/types/medication'
 import ClipboardButton from '@/components/ClipboardButton.vue'
 import { useSnooze } from '@/composables/useSnooze'
 import SnoozeButton from '@/components/SnoozeButton.vue'
+import { storeToRefs } from 'pinia'
 
 const route = useRoute()
 const router = useRouter()
@@ -16,8 +18,10 @@ const showModal = computed(() => route.query.add === 'true')
 
 const { data, isLoading, error } = useMedications()
 const { snooze, unSnooze, isSnoozed } = useSnooze()
+const uiStore = useUI()
+const { toggleSortOrder } = uiStore
+const { sortOrder } = storeToRefs(uiStore)
 
-const sortOrder = ref<'alphabetical' | 'urgency'>('alphabetical')
 const filteredMedications = computed(() =>
   [...(data.value ?? [])]
     .filter((m) => m.daysRemaining <= m.warningThreshold && !isSnoozed.value(m.id))
@@ -36,10 +40,6 @@ const sortedMedications = computed(() => {
     return [...warned, ...good]
   }
 })
-
-const toggleSortOrder = () => {
-  sortOrder.value = sortOrder.value === 'alphabetical' ? 'urgency' : 'alphabetical'
-}
 
 const clipboardText = computed(() =>
   filteredMedications.value.length === 1
