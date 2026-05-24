@@ -1,12 +1,10 @@
-FROM rust:latest AS builder
+FROM rust:1.95 AS builder
 WORKDIR /app
 
 # Dependencies separat cachen
 COPY Cargo.toml Cargo.lock ./
 RUN mkdir src && echo "fn main() {}" > src/main.rs
 ENV SQLX_OFFLINE=true
-ARG GIT_SHA=unknown
-ENV GIT_SHA=$GIT_SHA
 RUN cargo build --release
 RUN rm src/main.rs
 
@@ -14,6 +12,8 @@ RUN rm src/main.rs
 COPY src ./src
 COPY migrations ./migrations
 COPY .sqlx ./.sqlx
+ARG GIT_SHA=unknown
+ENV GIT_SHA=$GIT_SHA
 RUN touch src/main.rs && cargo build --release
 
 FROM debian:bookworm-slim
