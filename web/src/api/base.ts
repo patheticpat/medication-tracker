@@ -23,6 +23,7 @@ export async function handleResponse<T>(r: Response): Promise<T> {
   if (!r.ok) {
     throw new Error(`API Error: ${r.status}`)
   }
+  if (r.status == 204) return undefined as T
   return r.json()
 }
 

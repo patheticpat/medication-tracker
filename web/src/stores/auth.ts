@@ -1,6 +1,7 @@
 // src/stores/auth.ts
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import { useQueryCache } from '@pinia/colada'
 
 export const useAuthStore = defineStore('auth', () => {
   const isLoggedIn = ref(localStorage.getItem('token') !== null)
@@ -12,6 +13,8 @@ export const useAuthStore = defineStore('auth', () => {
 
   function logout() {
     localStorage.removeItem('token')
+    const queryCache = useQueryCache()
+    queryCache.invalidateQueries()
     isLoggedIn.value = false
   }
 

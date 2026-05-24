@@ -1,9 +1,9 @@
-import {
-  startRegistration,
-  startAuthentication,
-} from '@simplewebauthn/browser'
+import { startRegistration, startAuthentication } from '@simplewebauthn/browser'
 import { apiUrl, authHeaders, handleResponse } from './base'
-import type { PublicKeyCredentialCreationOptionsJSON, PublicKeyCredentialRequestOptionsJSON } from '@simplewebauthn/browser'
+import type {
+  PublicKeyCredentialCreationOptionsJSON,
+  PublicKeyCredentialRequestOptionsJSON,
+} from '@simplewebauthn/browser'
 import type { AuthResponse } from '@/types/auth'
 
 export async function registerPasskey() {
@@ -12,7 +12,7 @@ export async function registerPasskey() {
     method: 'POST',
     headers: authHeaders(),
   })
-  const options = await handleResponse<{publicKey: PublicKeyCredentialCreationOptionsJSON}>(r)
+  const options = await handleResponse<{ publicKey: PublicKeyCredentialCreationOptionsJSON }>(r)
 
   // 2. Browser zeigt Authenticator-Dialog
   const credential = await startRegistration({ optionsJSON: options.publicKey })
@@ -23,7 +23,7 @@ export async function registerPasskey() {
     headers: authHeaders(true),
     body: JSON.stringify(credential),
   })
-  await handleResponse<void>(r2)
+  return handleResponse(r2)
 }
 
 export async function loginWithPasskey(username: string) {
@@ -33,7 +33,7 @@ export async function loginWithPasskey(username: string) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ username }),
   })
-  const options = await handleResponse<{publicKey: PublicKeyCredentialRequestOptionsJSON}>(r)
+  const options = await handleResponse<{ publicKey: PublicKeyCredentialRequestOptionsJSON }>(r)
 
   // 2. Browser zeigt Authenticator-Dialog
   const credential = await startAuthentication({ optionsJSON: options.publicKey })
@@ -45,4 +45,25 @@ export async function loginWithPasskey(username: string) {
     body: JSON.stringify(credential),
   })
   return handleResponse<AuthResponse>(r2)
+}
+
+export interface PasskeyInfo {
+  credential_id: string
+  added_at: number // Unix timestamp (Sekunden)
+  last_used_at: number | null
+}
+
+export async function getPasskeys(): Promise<PasskeyInfo[]> {
+  // GET /auth/passkeys mit authHeaders()
+  const r = await fetch(apiUrl('/auth/passkeys'), { headers: authHeaders() })
+  return handleResponse(r)
+}
+
+export async function deletePasskey(id: string): Promise<void> {
+  // DELETE /auth/passkeys/:credentialId mit authHeaders()
+  const r = await fetch(apiUrl(`/auth/passkeys/${id}`), {
+    headers: authHeaders(),
+    method: 'DELETE',
+  })
+  return handleResponse(r)
 }

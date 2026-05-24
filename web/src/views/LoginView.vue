@@ -76,7 +76,7 @@ const handlePasskeyLogin = async () => {
             <div class="w-full border-t border-gray-200"></div>
           </div>
           <div class="relative flex justify-center text-sm">
-            <span class="px-2 bg-white text-gray-400">oder</span>
+            <span class="px-2 bg-white text-gray-400">or</span>
           </div>
         </div>
 
@@ -86,7 +86,7 @@ const handlePasskeyLogin = async () => {
           class="w-full flex items-center justify-center gap-2 border border-gray-200 rounded-md px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
         >
           <KeyRound class="w-4 h-4" />
-          Mit Passkey anmelden
+          Sign in with passkey
         </button>
       </form>
 
