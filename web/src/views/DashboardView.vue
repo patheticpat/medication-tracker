@@ -8,6 +8,7 @@ import { formatAmount } from '@/api/base'
 import type { MedicationWithStats } from '@/types/medication'
 import ClipboardButton from '@/components/ClipboardButton.vue'
 import { useSnooze } from '@/composables/useSnooze'
+import SnoozeButton from '@/components/SnoozeButton.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -45,6 +46,8 @@ const clipboardText = computed(() =>
     ? filteredMedications.value[0]!.name
     : filteredMedications.value.map((m) => `- ${m.name}`).join('\n'),
 )
+
+const snoozeAll = () => filteredMedications.value.forEach((m) => snooze(m.id))
 </script>
 
 <template>
@@ -64,7 +67,10 @@ const clipboardText = computed(() =>
     >
       <div class="flex items-center justify-between mb-3">
         <span class="font-medium text-red-800">Running low</span>
-        <ClipboardButton :text="clipboardText" />
+        <div class="flex items-center gap-2">
+          <SnoozeButton @snooze="snoozeAll" />
+          <ClipboardButton :text="clipboardText" />
+        </div>
       </div>
       <p class="text-sm text-red-700">
         {{ filteredMedications.map((m) => `${m.name} (${m.daysRemaining}d)`).join(' · ') }}
