@@ -16,6 +16,8 @@ use crate::handlers::{
         register_complete,
     },
 };
+#[cfg(debug_assertions)]
+use axum::http::header::{AUTHORIZATION, CONTENT_TYPE};
 use axum::{
     Router,
     routing::{delete, get, post, put},
@@ -96,7 +98,7 @@ async fn main() -> Result<()> {
         CorsLayer::new()
             .allow_origin(Any)
             .allow_methods(Any)
-            .allow_headers(Any),
+            .allow_headers([AUTHORIZATION, CONTENT_TYPE]),
     );
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await?;
