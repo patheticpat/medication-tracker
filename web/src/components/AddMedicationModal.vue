@@ -6,6 +6,9 @@ import { useMutation, useQueryCache } from '@pinia/colada'
 import { computed, nextTick, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { X } from 'lucide-vue-next'
+import { useToast } from '@/composables/useToast'
+
+const { addToast } = useToast()
 
 const nameInput = ref<HTMLInputElement | null>(null)
 
@@ -18,6 +21,8 @@ const cache = useQueryCache()
 
 const { mutateAsync, isLoading } = useMutation({
   mutation: createMedication,
+  onSuccess: (medication) => addToast(`${medication.name} added`, 'success'),
+  onError: () => addToast('Failed to add medication', 'error'),
   onSettled: () => cache.invalidateQueries({ key: MEDICATION_KEYS.root }),
 })
 

@@ -3,6 +3,7 @@ import { useMidnightRefresh } from './composables/useMidnightRefresh'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from './stores/auth'
 import { storeToRefs } from 'pinia'
+import ToastContainer from './components/ToastContainer.vue'
 
 const authStore = useAuthStore()
 const { isLoggedIn } = storeToRefs(authStore)
@@ -56,6 +57,7 @@ function handleLogoClick() {
       <RouterView />
     </main>
   </div>
+  <ToastContainer />
 </template>
 
 <style scoped></style>

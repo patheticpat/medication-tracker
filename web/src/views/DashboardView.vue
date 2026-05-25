@@ -11,6 +11,7 @@ import ClipboardButton from '@/components/ClipboardButton.vue'
 import { useSnooze } from '@/composables/useSnooze'
 import SnoozeButton from '@/components/SnoozeButton.vue'
 import { storeToRefs } from 'pinia'
+import { useToast } from '@/composables/useToast'
 
 const route = useRoute()
 const router = useRouter()
@@ -21,6 +22,8 @@ const { snooze, unSnooze, isSnoozed } = useSnooze()
 const uiStore = useUI()
 const { toggleSortOrder } = uiStore
 const { sortOrder } = storeToRefs(uiStore)
+
+const { addToast } = useToast()
 
 const filteredMedications = computed(() =>
   [...(data.value ?? [])]
@@ -47,7 +50,11 @@ const clipboardText = computed(() =>
     : filteredMedications.value.map((m) => `- ${m.name}`).join('\n'),
 )
 
-const snoozeAll = () => filteredMedications.value.forEach((m) => snooze(m.id))
+const snoozeAll = () => {
+  const count = filteredMedications.value.length
+  filteredMedications.value.forEach((m) => snooze(m.id))
+  addToast(`${count} medications snoozed`, 'info')
+}
 </script>
 
 <template>

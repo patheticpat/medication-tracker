@@ -6,6 +6,7 @@ import { onMounted, ref } from 'vue'
 import { useQuery, useQueryCache, useMutation } from '@pinia/colada'
 import { Trash2 } from 'lucide-vue-next'
 import { changePassword } from '@/api/auth'
+import { useToast } from '@/composables/useToast'
 
 declare const __GIT_SHA__: string
 
@@ -13,6 +14,8 @@ const backendSHA = ref<string>('unknown')
 const frontendSHA = __GIT_SHA__
 
 const queryCache = useQueryCache()
+
+const { addToast } = useToast()
 
 const {
   data: passkeys,
@@ -22,6 +25,8 @@ const {
 
 const { mutateAsync: deletePasskeyAsync } = useMutation({
   mutation: (id: string) => deletePasskey(id),
+  onSuccess: () => addToast('Passkey removed', 'success'),
+  onError: () => addToast('Failed to remove passkey', 'error'),
   onSettled: () => queryCache.invalidateQueries({ key: ['PASSKEYS'] }),
 })
 
@@ -29,7 +34,9 @@ const handleAddPasskey = async () => {
   try {
     await registerPasskey()
     queryCache.invalidateQueries({ key: ['PASSKEYS'] })
+    addToast('Passkey added', 'success')
   } catch (e) {
+    addToast('Failed to add passkey', 'error')
     console.error(e)
   }
 }
@@ -37,8 +44,6 @@ const handleAddPasskey = async () => {
 const currentPassword = ref('')
 const newPassword = ref('')
 const confirmPassword = ref('')
-const passwordError = ref('')
-const passwordSuccess = ref(false)
 
 const { mutateAsync: changePasswordAsync } = useMutation({
   mutation: (payload: { current_password: string; new_password: string }) =>
@@ -46,13 +51,8 @@ const { mutateAsync: changePasswordAsync } = useMutation({
 })
 
 const handleChangePassword = async () => {
-  passwordError.value = ''
   if (newPassword.value !== confirmPassword.value) {
-    passwordError.value = 'Passwords do not match'
-    return
-  }
-  if (!currentPassword.value || !newPassword.value) {
-    passwordError.value = 'Please fill in all fields'
+    addToast('Passwords do not match', 'error')
     return
   }
   try {
@@ -60,10 +60,9 @@ const handleChangePassword = async () => {
       current_password: currentPassword.value,
       new_password: newPassword.value,
     })
-    passwordSuccess.value = true
-    setTimeout(() => (passwordSuccess.value = false), 3000)
+    addToast('Password updated', 'success')
   } catch {
-    passwordError.value = 'Current password is incorrect'
+    addToast('Password is incorrect', 'error')
   } finally {
     currentPassword.value = ''
     newPassword.value = ''
@@ -163,10 +162,6 @@ const shortId = (id: string) => id.slice(0, 8) + '…'
           />
         </div>
       </div>
-      <p v-if="passwordError" class="text-xs text-red-500 mt-2">{{ passwordError }}</p>
-      <p v-if="passwordSuccess" class="text-xs text-green-500 mt-2">
-        Password updated successfully
-      </p>
       <button
         @click="handleChangePassword"
         :disabled="newPassword !== confirmPassword || !currentPassword || !newPassword"

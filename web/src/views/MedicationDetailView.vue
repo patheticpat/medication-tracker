@@ -10,10 +10,12 @@ import EditMedicationModal from '@/components/EditMedicationModal.vue'
 import { formatAmount } from '@/api/base'
 import ClipboardButton from '@/components/ClipboardButton.vue'
 import { useSnooze } from '@/composables/useSnooze'
+import { useToast } from '@/composables/useToast'
 
 const router = useRouter()
 const route = useRoute()
 const cache = useQueryCache()
+const { addToast } = useToast()
 const showEditModal = computed(() => route.query.edit === 'true')
 const {
   data: medication,
@@ -31,6 +33,8 @@ const { mutateAsync: deleteAsync } = useMutation({
 
 const { mutateAsync: createLogAsync } = useMutation({
   mutation: (log: CreateLogEntry) => createLogEntry(route.params.id as string, log),
+  onSuccess: (_, log) =>
+    addToast(log.kind === 'refill' ? 'Refill logged' : 'Stock updated', 'success'),
   onSettled: () => cache.invalidateQueries({ key: MEDICATION_KEYS.root }),
 })
 
@@ -45,6 +49,7 @@ const handleDelete = async () => {
     return
   }
   await deleteAsync()
+  addToast(`${medication.value!.name} deleted`, 'success')
   await router.replace({ name: 'dashboard' })
   cache.invalidateQueries({ key: MEDICATION_KEYS.root })
 }
