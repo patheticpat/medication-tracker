@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { createLogEntry, deleteMedication, getMedicationDetails } from '@/api/medications'
-import { MEDICATION_KEYS } from '@/stores/medications'
+import { MEDICATION_KEYS, useUpdateSnooze } from '@/stores/medications'
 import type { CreateLogEntry } from '@/types/medication'
 import { useMutation, useQuery, useQueryCache } from '@pinia/colada'
 import { computed, ref } from 'vue'
@@ -9,7 +9,6 @@ import { Trash2, Pencil, Bell, BellOff } from 'lucide-vue-next'
 import EditMedicationModal from '@/components/EditMedicationModal.vue'
 import { formatAmount } from '@/api/base'
 import ClipboardButton from '@/components/ClipboardButton.vue'
-import { useSnooze } from '@/composables/useSnooze'
 import { useToast } from '@/composables/useToast'
 
 const router = useRouter()
@@ -28,7 +27,6 @@ const {
 
 const { mutateAsync: deleteAsync } = useMutation({
   mutation: () => deleteMedication(route.params.id as string),
-  onSettled: () => unSnooze(route.params.id as string),
 })
 
 const { mutateAsync: createLogAsync } = useMutation({
@@ -38,7 +36,7 @@ const { mutateAsync: createLogAsync } = useMutation({
   onSettled: () => cache.invalidateQueries({ key: MEDICATION_KEYS.root }),
 })
 
-const { isSnoozed, snooze, unSnooze } = useSnooze()
+const { mutate: updateSnooze } = useUpdateSnooze()
 
 const confirmDelete = ref(false)
 
@@ -132,7 +130,7 @@ const logEntries = computed(() => {
           class="font-medium"
           :class="
             medication.daysRemaining <= medication.warningThreshold
-              ? isSnoozed(medication.id)
+              ? medication.snoozed
                 ? 'text-amber-500'
                 : 'text-red-500'
               : 'text-green-600'
@@ -218,8 +216,8 @@ const logEntries = computed(() => {
       </RouterLink>
 
       <button
-        v-if="isSnoozed(medication.id) && medication.daysRemaining <= medication.warningThreshold"
-        @click="unSnooze(medication.id)"
+        v-if="medication.snoozed && medication.daysRemaining <= medication.warningThreshold"
+        @click="updateSnooze({ id: medication.id, snoozed: false })"
         class="flex items-center gap-1.5 text-sm text-amber-500 hover:text-amber-600 border border-amber-200 rounded-md px-3 py-1.5 transition-colors"
       >
         <Bell class="w-4 h-4" />
@@ -227,8 +225,8 @@ const logEntries = computed(() => {
       </button>
 
       <button
-        v-if="!isSnoozed(medication.id) && medication.daysRemaining <= medication.warningThreshold"
-        @click="snooze(medication.id)"
+        v-if="!medication.snoozed && medication.daysRemaining <= medication.warningThreshold"
+        @click="updateSnooze({ id: medication.id, snoozed: true })"
         class="flex items-center gap-1.5 text-sm text-amber-500 hover:text-amber-600 border border-amber-200 rounded-md px-3 py-1.5 transition-colors"
       >
         <BellOff class="w-4 h-4" />

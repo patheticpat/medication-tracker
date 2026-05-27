@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useMedications } from '@/stores/medications'
+import { useMedications, useUpdateSnooze } from '@/stores/medications'
 import { useUI } from '@/stores/ui'
 import { computed } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
@@ -8,7 +8,6 @@ import AddMedicationModal from '@/components/AddMedicationModal.vue'
 import { formatAmount } from '@/api/base'
 import type { MedicationWithStats } from '@/types/medication'
 import ClipboardButton from '@/components/ClipboardButton.vue'
-import { useSnooze } from '@/composables/useSnooze'
 import SnoozeButton from '@/components/SnoozeButton.vue'
 import { storeToRefs } from 'pinia'
 import { useToast } from '@/composables/useToast'
@@ -18,7 +17,6 @@ const router = useRouter()
 const showModal = computed(() => route.query.add === 'true')
 
 const { data, isLoading, error } = useMedications()
-const { snooze, unSnooze, isSnoozed } = useSnooze()
 const uiStore = useUI()
 const { toggleSortOrder } = uiStore
 const { sortOrder } = storeToRefs(uiStore)
@@ -27,9 +25,11 @@ const { addToast } = useToast()
 
 const filteredMedications = computed(() =>
   [...(data.value ?? [])]
-    .filter((m) => m.daysRemaining <= m.warningThreshold && !isSnoozed.value(m.id))
+    .filter((m) => m.daysRemaining <= m.warningThreshold && !m.snoozed)
     .sort((a, b) => a.name.localeCompare(b.name)),
 )
+
+const { mutate: updateSnooze } = useUpdateSnooze()
 
 const sortedMedications = computed(() => {
   if (sortOrder.value === 'alphabetical') {
@@ -40,7 +40,7 @@ const sortedMedications = computed(() => {
       .reduce(
         (groups, m) => {
           if (m.daysRemaining > m.warningThreshold) groups.good.push(m)
-          else if (isSnoozed.value(m.id)) groups.snoozed.push(m)
+          else if (m.snoozed) groups.snoozed.push(m)
           else groups.warned.push(m)
           return groups
         },
@@ -61,7 +61,7 @@ const clipboardText = computed(() =>
 
 const snoozeAll = () => {
   const count = filteredMedications.value.length
-  filteredMedications.value.forEach((m) => snooze(m.id))
+  filteredMedications.value.forEach((m) => updateSnooze({ id: m.id, snoozed: true }))
   addToast(`${count} medications snoozed`, 'info')
 }
 </script>
@@ -110,7 +110,7 @@ const snoozeAll = () => {
           :class="[
             'h-full flex flex-col bg-white rounded-lg border border-gray-200 px-5 py-4 hover:shadow-sm transition-all border-t-4',
             medication.daysRemaining <= medication.warningThreshold
-              ? isSnoozed(medication.id)
+              ? medication.snoozed
                 ? 'border-t-amber-500'
                 : 'border-t-red-400'
               : 'border-t-green-500',
@@ -121,17 +121,14 @@ const snoozeAll = () => {
             <div class="flex items-center gap-2">
               <span class="text-sm text-gray-500">{{ medication.daysRemaining }} days</span>
               <button
-                v-if="
-                  isSnoozed(medication.id) &&
-                  medication.daysRemaining <= medication.warningThreshold
-                "
-                @click.prevent.stop="unSnooze(medication.id)"
+                v-if="medication.snoozed && medication.daysRemaining <= medication.warningThreshold"
+                @click.prevent.stop="updateSnooze({ id: medication.id, snoozed: false })"
               >
                 <BellOff class="w-4 h-4 text-amber-500" />
               </button>
               <button
                 v-else-if="medication.daysRemaining <= medication.warningThreshold"
-                @click.prevent.stop="snooze(medication.id)"
+                @click.prevent.stop="updateSnooze({ id: medication.id, snoozed: true })"
               >
                 <Bell class="w-4 h-4 text-red-400" />
               </button>
@@ -146,7 +143,7 @@ const snoozeAll = () => {
               class="h-full rounded-full transition-all"
               :class="
                 medication.daysRemaining <= medication.warningThreshold
-                  ? isSnoozed(medication.id)
+                  ? medication.snoozed
                     ? 'bg-amber-500'
                     : 'bg-red-400'
                   : 'bg-green-500'

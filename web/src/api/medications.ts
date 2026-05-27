@@ -45,6 +45,17 @@ export async function updateMedication(
   return handleResponse(r)
 }
 
+export async function updateSnooze(id: string, snoozed: boolean): Promise<MedicationWithStats> {
+  const url = apiUrl(`/medications/${id}/snooze`)
+  url.searchParams.set('date', today())
+  const r = await fetch(url, {
+    method: 'PATCH',
+    headers: authHeaders(true),
+    body: JSON.stringify({snoozed}),
+  })
+  return handleResponse(r)
+}
+
 export async function createLogEntry(
   id: string,
   logEntry: CreateLogEntry,

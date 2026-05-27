@@ -4,6 +4,7 @@ export interface Medication {
   unit: string
   schedule: Schedule
   warningThreshold: number
+  snoozed: boolean
   logs?: LogEntry[]
 }
 
