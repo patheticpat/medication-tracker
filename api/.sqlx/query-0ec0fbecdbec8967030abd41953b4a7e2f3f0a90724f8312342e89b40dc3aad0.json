@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": " SELECT m.id, m.user_id, m.name, m.unit, m.schedule_kind, m.schedule_amount, m.schedule_day_of_week, m.warning_threshold,\n                l.id AS log_id, l.kind AS log_kind, l.amount AS log_amount,\n                l.date AS \"log_date: NaiveDate\", l.note AS log_note\n            FROM medications m LEFT JOIN log_entries l ON m.id = l.medication_id\n            WHERE m.user_id=?\n            ORDER BY m.id, l.date, l.id",
+  "query": " SELECT m.id, m.user_id, m.name, m.unit, m.schedule_kind, m.schedule_amount, m.schedule_day_of_week, m.warning_threshold, m.snoozed,\n                l.id AS log_id, l.kind AS log_kind, l.amount AS log_amount,\n                l.date AS \"log_date: NaiveDate\", l.note AS log_note\n            FROM medications m LEFT JOIN log_entries l ON m.id = l.medication_id\n            WHERE m.user_id=?\n            ORDER BY m.id, l.date, l.id",
   "describe": {
     "columns": [
       {
@@ -44,28 +44,33 @@
         "type_info": "Integer"
       },
       {
-        "name": "log_id",
+        "name": "snoozed",
         "ordinal": 8,
-        "type_info": "Text"
+        "type_info": "Bool"
       },
       {
-        "name": "log_kind",
+        "name": "log_id",
         "ordinal": 9,
         "type_info": "Text"
       },
       {
-        "name": "log_amount",
+        "name": "log_kind",
         "ordinal": 10,
+        "type_info": "Text"
+      },
+      {
+        "name": "log_amount",
+        "ordinal": 11,
         "type_info": "Float"
       },
       {
         "name": "log_date: NaiveDate",
-        "ordinal": 11,
+        "ordinal": 12,
         "type_info": "Text"
       },
       {
         "name": "log_note",
-        "ordinal": 12,
+        "ordinal": 13,
         "type_info": "Text"
       }
     ],
@@ -81,6 +86,7 @@
       false,
       true,
       false,
+      false,
       true,
       true,
       true,
@@ -88,5 +94,5 @@
       true
     ]
   },
-  "hash": "0a6efa7ed64c6dc30d2b6ca9d895fb39a4973a512cc81cad3889f4a9c56e9fae"
+  "hash": "0ec0fbecdbec8967030abd41953b4a7e2f3f0a90724f8312342e89b40dc3aad0"
 }

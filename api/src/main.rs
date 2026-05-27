@@ -9,7 +9,7 @@ use crate::handlers::{
     auth::{change_password, login, register},
     medications::{
         create_log_entry, create_medication, delete_medication, health, list_medications,
-        medication_details, update_medication,
+        medication_details, patch_snooze, update_medication,
     },
     passkey::{
         delete_passkey, list_passkeys, login_begin, login_complete, register_begin,
@@ -20,7 +20,7 @@ use crate::handlers::{
 use axum::http::header::{AUTHORIZATION, CONTENT_TYPE};
 use axum::{
     Router,
-    routing::{delete, get, post, put},
+    routing::{delete, get, patch, post, put},
 };
 use color_eyre::Result;
 use sqlx::{SqlitePool, sqlite::SqliteConnectOptions};
@@ -90,6 +90,7 @@ async fn main() -> Result<()> {
                 .delete(delete_medication)
                 .patch(update_medication),
         )
+        .route("/medications/{id}/snooze", patch(patch_snooze))
         .route("/medications/{id}/log", post(create_log_entry))
         .with_state(state);
 

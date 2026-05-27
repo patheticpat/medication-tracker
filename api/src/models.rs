@@ -11,6 +11,7 @@ pub struct Medication {
     pub unit: String,
     pub schedule: Schedule,
     pub warning_threshold: u16,
+    pub snoozed: bool,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub logs: Option<Vec<LogEntry>>,
 }
@@ -43,6 +44,12 @@ pub struct UpdateMedication {
     pub warning_threshold: Option<u16>,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PatchSnooze {
+    pub snoozed: bool,
+}
+
 #[derive(Debug)]
 pub struct DbMedicationWithLogRow {
     pub id: Option<String>,
@@ -53,6 +60,7 @@ pub struct DbMedicationWithLogRow {
     pub schedule_amount: f64,
     pub schedule_day_of_week: Option<i64>,
     pub warning_threshold: i64,
+    pub snoozed: bool,
     pub log_id: Option<String>,
     pub log_kind: Option<String>,
     pub log_amount: Option<f64>,
@@ -70,6 +78,7 @@ pub struct DbMedication {
     pub schedule_amount: f64,
     pub schedule_day_of_week: Option<i64>,
     pub warning_threshold: i64,
+    pub snoozed: bool,
 }
 
 impl TryFrom<DbMedication> for Medication {
@@ -91,6 +100,7 @@ impl TryFrom<DbMedication> for Medication {
                 _ => return Err(eyre!("unknown schedule kind")),
             },
             warning_threshold: value.warning_threshold.try_into()?,
+            snoozed: value.snoozed,
             logs: None,
         })
     }
@@ -322,6 +332,7 @@ mod tests {
             unit: String::from("Tabletten"),
             schedule: Schedule::Daily { amount: 5. },
             warning_threshold: 14,
+            snoozed: false,
             logs: Some(vec![LogEntry::Baseline {
                 id: Uuid::nil(),
                 amount: 100.,
@@ -345,6 +356,7 @@ mod tests {
             unit: String::from("Tabletten"),
             schedule: Schedule::Daily { amount: 1. },
             warning_threshold: 14,
+            snoozed: false,
             logs: Some(vec![
                 LogEntry::Baseline {
                     id: Uuid::nil(),
@@ -378,6 +390,7 @@ mod tests {
                 amount: 1.,
             },
             warning_threshold: 14,
+            snoozed: false,
             logs: Some(vec![LogEntry::Baseline {
                 id: Uuid::nil(),
                 amount: 100.,
@@ -415,6 +428,7 @@ mod tests {
                 amount: 1.,
             },
             warning_threshold: 14,
+            snoozed: false,
             logs: Some(vec![LogEntry::Baseline {
                 id: Uuid::nil(),
                 amount: 2.,
