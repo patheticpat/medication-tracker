@@ -108,7 +108,7 @@ const snoozeAll = () => {
         <RouterLink
           :to="{ name: 'medications-details', params: { id: medication.id } }"
           :class="[
-            'block h-full flex flex-col bg-white rounded-lg border border-gray-200 px-5 py-4 hover:shadow-sm transition-all border-t-4',
+            'h-full flex flex-col bg-white rounded-lg border border-gray-200 px-5 py-4 hover:shadow-sm transition-all border-t-4',
             medication.daysRemaining <= medication.warningThreshold
               ? isSnoozed(medication.id)
                 ? 'border-t-amber-500'
