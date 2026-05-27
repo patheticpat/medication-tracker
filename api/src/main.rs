@@ -17,7 +17,7 @@ use crate::handlers::{
     },
 };
 #[cfg(debug_assertions)]
-use axum::http::header::{AUTHORIZATION, CONTENT_TYPE};
+use axum::http::header::{AUTHORIZATION, CONTENT_TYPE, HeaderName};
 use axum::{
     Router,
     routing::{delete, get, patch, post, put},
@@ -99,7 +99,7 @@ async fn main() -> Result<()> {
         CorsLayer::new()
             .allow_origin(Any)
             .allow_methods(Any)
-            .allow_headers([AUTHORIZATION, CONTENT_TYPE]),
+            .allow_headers([AUTHORIZATION, CONTENT_TYPE, HeaderName::from_static("x-timezone")]),
     );
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await?;

@@ -1,11 +1,7 @@
-use axum::{
-    extract::{FromRequestParts, Query},
-    http::request::Parts,
-};
+use axum::{extract::FromRequestParts, http::request::Parts};
 use chrono::{NaiveDate, TimeZone};
-use chrono_tz::Europe::Berlin;
 
-use crate::{errors::AppError, models::DateQuery};
+use crate::errors::AppError;
 
 pub struct LocalDate(pub NaiveDate);
 
@@ -16,20 +12,16 @@ where
     type Rejection = AppError;
 
     async fn from_request_parts(parts: &mut Parts, _state: &S) -> Result<Self, Self::Rejection> {
-        let date = if let Ok(Query(params)) =
-            Query::<DateQuery>::from_request_parts(parts, _state).await
-        {
-            params.date.unwrap_or_else(|| {
-                Berlin
-                    .from_utc_datetime(&chrono::Utc::now().naive_utc())
-                    .date_naive()
-            })
-        } else {
-            Berlin
-                .from_utc_datetime(&chrono::Utc::now().naive_utc())
-                .date_naive()
-        };
+        let tz: chrono_tz::Tz = parts
+            .headers
+            .get("x-timezone")
+            .and_then(|v| v.to_str().ok())
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(chrono_tz::Europe::Berlin);
 
+        let date = tz
+            .from_utc_datetime(&chrono::Utc::now().naive_utc())
+            .date_naive();
         Ok(LocalDate(date))
     }
 }

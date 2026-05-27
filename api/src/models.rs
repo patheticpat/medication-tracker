@@ -109,16 +109,8 @@ impl TryFrom<DbMedication> for Medication {
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "camelCase")]
 pub enum CreateLogEntry {
-    Baseline {
-        amount: f64,
-        date: NaiveDate,
-        note: Option<String>,
-    },
-    Refill {
-        amount: f64,
-        date: NaiveDate,
-        note: Option<String>,
-    },
+    Baseline { amount: f64, note: Option<String> },
+    Refill { amount: f64, note: Option<String> },
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -184,11 +176,6 @@ impl LogEntry {
             LogEntry::Refill { date, .. } => date,
         }
     }
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct DateQuery {
-    pub date: Option<NaiveDate>,
 }
 
 fn count_weekday_between(start: NaiveDate, end: NaiveDate, target_wd: u8) -> i64 {

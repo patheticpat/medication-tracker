@@ -4,18 +4,16 @@ import type {
   UpdateMedication,
   MedicationWithStats,
 } from '@/types/medication'
-import { apiUrl, authHeaders, handleResponse, today } from './base'
+import { apiUrl, authHeaders, handleResponse } from './base'
 
 export async function getMedications(): Promise<MedicationWithStats[]> {
   const url = apiUrl('/medications')
-  url.searchParams.set('date', today())
   const r = await fetch(url, { headers: authHeaders() })
   return handleResponse(r)
 }
 
 export async function createMedication(medication: CreateMedication): Promise<MedicationWithStats> {
   const url = apiUrl('/medications')
-  url.searchParams.set('date', today())
   const r = await fetch(url, {
     method: 'POST',
     headers: authHeaders(true),
@@ -26,7 +24,6 @@ export async function createMedication(medication: CreateMedication): Promise<Me
 
 export async function getMedicationDetails(id: string): Promise<MedicationWithStats> {
   const url = apiUrl(`/medications/${id}`)
-  url.searchParams.set('date', today())
   const r = await fetch(url, { headers: authHeaders() })
   return handleResponse(r)
 }
@@ -36,7 +33,6 @@ export async function updateMedication(
   medication: UpdateMedication,
 ): Promise<MedicationWithStats> {
   const url = apiUrl(`/medications/${id}`)
-  url.searchParams.set('date', today())
   const r = await fetch(url, {
     method: 'PATCH',
     headers: authHeaders(true),
@@ -47,11 +43,10 @@ export async function updateMedication(
 
 export async function updateSnooze(id: string, snoozed: boolean): Promise<MedicationWithStats> {
   const url = apiUrl(`/medications/${id}/snooze`)
-  url.searchParams.set('date', today())
   const r = await fetch(url, {
     method: 'PATCH',
     headers: authHeaders(true),
-    body: JSON.stringify({snoozed}),
+    body: JSON.stringify({ snoozed }),
   })
   return handleResponse(r)
 }
@@ -61,12 +56,10 @@ export async function createLogEntry(
   logEntry: CreateLogEntry,
 ): Promise<MedicationWithStats> {
   const url = apiUrl(`/medications/${id}/log`)
-  const at = today()
-  url.searchParams.set('date', at)
   const r = await fetch(url, {
     method: 'POST',
     headers: authHeaders(true),
-    body: JSON.stringify({ ...logEntry, date: at }),
+    body: JSON.stringify(logEntry),
   })
   return handleResponse(r)
 }

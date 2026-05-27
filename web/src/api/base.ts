@@ -3,10 +3,6 @@ import { useAuthStore } from '@/stores/auth'
 
 export const BASE_URL = import.meta.env.VITE_API_BASE_URL
 
-export function today(): string {
-  return new Date().toLocaleDateString('en-CA')
-}
-
 export const formatAmount = (amount: number) => Number(amount.toFixed(1)).toString()
 
 export function apiUrl(path: string): URL {
@@ -32,5 +28,6 @@ export function authHeaders(withContentType = false): Record<string, string> {
   const headers: Record<string, string> = {}
   if (token) headers['Authorization'] = `Bearer ${token}`
   if (withContentType) headers['Content-Type'] = 'application/json'
+  headers['X-Timezone'] = Intl.DateTimeFormat().resolvedOptions().timeZone
   return headers
 }

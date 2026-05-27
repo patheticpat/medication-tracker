@@ -401,6 +401,7 @@ pub async fn create_log_entry(
     State(state): State<AppState>,
     AuthUser(user_id): AuthUser,
     Path(id): Path<Uuid>,
+    LocalDate(today): LocalDate,
     Json(body): Json<CreateLogEntry>,
 ) -> Result<Json<Medication>, AppError> {
     let med_id = id.to_string();
@@ -415,9 +416,9 @@ pub async fn create_log_entry(
         return Err(AppError::NotFound);
     }
 
-    let (kind, amount, date, note) = match body {
-        CreateLogEntry::Baseline { amount, date, note } => ("baseline", amount, date, note),
-        CreateLogEntry::Refill { amount, date, note } => ("refill", amount, date, note),
+    let (kind, amount, note) = match body {
+        CreateLogEntry::Baseline { amount, note } => ("baseline", amount, note),
+        CreateLogEntry::Refill { amount, note } => ("refill", amount, note),
     };
     let log_id = Uuid::now_v7().to_string();
 
@@ -428,7 +429,7 @@ pub async fn create_log_entry(
         med_id,
         kind,
         amount,
-        date,
+        today,
         note
     ).execute(&mut *tx).await?;
 
