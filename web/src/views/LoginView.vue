@@ -5,37 +5,36 @@ import { ref, computed } from 'vue'
 import { useRouter, RouterLink } from 'vue-router'
 import { KeyRound } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores/auth'
+import { useToast } from '@/composables/useToast'
 
+const { addToast } = useToast()
 const router = useRouter()
 const store = useAuthStore()
 const username = ref('')
 const password = ref('')
-const error = ref('')
 const isLoading = ref(false)
 const isValid = computed(() => username.value.length > 0 && password.value.length > 0)
 
 const handleSubmit = async () => {
-  error.value = ''
   isLoading.value = true
   try {
     await login({ username: username.value, password: password.value })
     router.replace({ name: 'dashboard' })
   } catch {
-    error.value = 'Invalid username or password'
+    addToast('Invalid username or password', 'error')
   } finally {
     isLoading.value = false
   }
 }
 
 const handlePasskeyLogin = async () => {
-  error.value = ''
   isLoading.value = true
   try {
     const response = await loginWithPasskey(username.value)
     store.login(response.token)
     router.replace({ name: 'dashboard' })
   } catch {
-    error.value = 'Passkey login failed'
+    addToast('Passkey login failed', 'error')
   } finally {
     isLoading.value = false
   }
@@ -63,7 +62,6 @@ const handlePasskeyLogin = async () => {
             class="border border-gray-200 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
-        <div v-if="error" class="text-sm text-red-500">{{ error }}</div>
         <button
           type="submit"
           :disabled="isLoading || !isValid"

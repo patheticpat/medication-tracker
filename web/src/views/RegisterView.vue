@@ -1,13 +1,15 @@
 <script setup lang="ts">
 import { register } from '@/api/auth'
+import { ApiError } from '@/api/base'
+import { useToast } from '@/composables/useToast'
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 
+const { addToast } = useToast()
 const router = useRouter()
 const username = ref('')
 const password = ref('')
 const password_confirmation = ref('')
-const error = ref('')
 const isLoading = ref(false)
 const isValid = computed(
   () =>
@@ -17,13 +19,15 @@ const isValid = computed(
 )
 
 const handleSubmit = async () => {
-  error.value = ''
   isLoading.value = true
   try {
     await register({ username: username.value, password: password.value })
     router.replace({ name: 'dashboard' })
-  } catch {
-    error.value = 'Something went wrong'
+  } catch (e) {
+    addToast(
+      e instanceof ApiError && e.status === 409 ? 'Username already taken' : 'Something went wrong',
+      'error',
+    )
   } finally {
     isLoading.value = false
     password.value = ''
@@ -61,7 +65,6 @@ const handleSubmit = async () => {
             class="border border-gray-200 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
-        <div v-if="error" class="text-sm text-red-500">{{ error }}</div>
         <button
           type="submit"
           :disabled="isLoading || !isValid"

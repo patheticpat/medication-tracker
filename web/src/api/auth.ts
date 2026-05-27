@@ -2,9 +2,8 @@ import type { AuthRequest, AuthResponse } from '@/types/auth'
 import { apiUrl, authHeaders, handleResponse } from './base'
 import { useAuthStore } from '@/stores/auth'
 
-const store = useAuthStore()
-
 export const login = async (request: AuthRequest): Promise<AuthResponse> => {
+  const store = useAuthStore()
   const url = apiUrl('/auth/login')
   const r = await fetch(url, {
     method: 'POST',
@@ -23,6 +22,7 @@ export const register = async (request: AuthRequest): Promise<AuthResponse> => {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(request),
   })
+  const store = useAuthStore()
   const response = await handleResponse<AuthResponse>(r)
   store.login(response.token)
   return response

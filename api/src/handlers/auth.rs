@@ -35,7 +35,15 @@ pub async fn register(
         password_hash,
     )
     .execute(&state.pool)
-    .await?;
+    .await
+    .map_err(|e| {
+        if let sqlx::Error::Database(db_err) = &e {
+            if db_err.kind() == sqlx::error::ErrorKind::UniqueViolation {
+                return AppError::Conflict(String::from("username already taken"));
+            }
+        }
+        AppError::Database(e)
+    })?;
 
     // 3. JWT erstellen und zurückgeben
     let token = create_jwt(&id, &state.jwt_secret)?;

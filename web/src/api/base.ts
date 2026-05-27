@@ -5,6 +5,15 @@ export const BASE_URL = import.meta.env.VITE_API_BASE_URL
 
 export const formatAmount = (amount: number) => Number(amount.toFixed(1)).toString()
 
+export class ApiError extends Error {
+  constructor(
+    public readonly status: number,
+    message: string,
+  ) {
+    super(message)
+  }
+}
+
 export function apiUrl(path: string): URL {
   return new URL(`${BASE_URL}${path.replace(/^\//, '')}`, window.location.origin)
 }
@@ -14,10 +23,11 @@ export async function handleResponse<T>(r: Response): Promise<T> {
     const authStore = useAuthStore()
     authStore.logout()
     router.replace({ name: 'login' })
-    throw new Error('Unauthorized')
+    throw new ApiError(401, 'Unauthorized')
   }
   if (!r.ok) {
-    throw new Error(`API Error: ${r.status}`)
+    const body = await r.text().catch(() => '')
+    throw new ApiError(r.status, body || `API Error: ${r.status}`)
   }
   if (r.status == 204) return undefined as T
   return r.json()

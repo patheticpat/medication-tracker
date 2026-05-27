@@ -9,6 +9,7 @@ pub enum AppError {
     InternalError,
     Unauthorized,
     BadRequest(String),
+    Conflict(String),
 }
 
 impl IntoResponse for AppError {
@@ -23,6 +24,7 @@ impl IntoResponse for AppError {
                 (StatusCode::INTERNAL_SERVER_ERROR, "Internal Server Error").into_response()
             }
             AppError::Unauthorized => (StatusCode::UNAUTHORIZED, "Unauthorized").into_response(),
+            AppError::Conflict(msg) => (StatusCode::CONFLICT, msg).into_response(),
         }
     }
 }
