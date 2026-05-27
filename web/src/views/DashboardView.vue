@@ -35,12 +35,21 @@ const sortedMedications = computed(() => {
   if (sortOrder.value === 'alphabetical') {
     return [...(data.value ?? [])].sort((a, b) => a.name.localeCompare(b.name))
   } else {
-    const [warned, good] = [...(data.value ?? [])]
+    const { warned, snoozed, good } = [...(data.value ?? [])]
       .sort((a, b) => a.daysRemaining - b.daysRemaining)
-      .reduce<
-        [MedicationWithStats[], MedicationWithStats[]]
-      >(([warned, good], m) => (m.daysRemaining <= m.warningThreshold ? [[...warned, m], good] : [warned, [...good, m]]), [[], []])
-    return [...warned, ...good]
+      .reduce(
+        (groups, m) => {
+          if (m.daysRemaining > m.warningThreshold) groups.good.push(m)
+          else if (isSnoozed.value(m.id)) groups.snoozed.push(m)
+          else groups.warned.push(m)
+          return groups
+        },
+        { warned: [], snoozed: [], good: [] } as Record<
+          'warned' | 'snoozed' | 'good',
+          MedicationWithStats[]
+        >,
+      )
+    return [...warned, ...snoozed, ...good]
   }
 })
 
