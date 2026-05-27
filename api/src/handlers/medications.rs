@@ -284,9 +284,6 @@ pub async fn delete_medication(
 ) -> Result<StatusCode, AppError> {
     let id = id.to_string();
 
-    sqlx::query!("DELETE FROM log_entries WHERE medication_id=?", id)
-        .execute(&state.pool)
-        .await?;
     let result = sqlx::query!(
         "DELETE FROM medications WHERE id=? AND user_id=?",
         id,
