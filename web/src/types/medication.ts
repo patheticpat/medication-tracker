@@ -13,7 +13,7 @@ export interface MedicationWithStats extends Medication {
   daysRemaining: number
 }
 
-export interface CreateMedication extends Omit<Medication, 'id' | 'logs'> {
+export interface CreateMedication extends Omit<Medication, 'id' | 'logs' | 'snoozed'> {
   initialStock: number
 }
 
