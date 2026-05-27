@@ -403,7 +403,7 @@ pub async fn create_log_entry(
     Path(id): Path<Uuid>,
     LocalDate(today): LocalDate,
     Json(body): Json<CreateLogEntry>,
-) -> Result<Json<Medication>, AppError> {
+) -> Result<Json<MedicationWithStats>, AppError> {
     let med_id = id.to_string();
     let result = sqlx::query!(
         r#"SELECT COUNT(*) AS count FROM medications WHERE id=? AND user_id=?"#,
@@ -440,5 +440,11 @@ pub async fn create_log_entry(
     tx.commit().await?;
 
     let medication = get_medication_with_logs(&state.pool, &med_id, &user_id).await?;
-    Ok(Json(medication))
+    let stock = medication.calculate_stock(&today);
+    let days_remaining = medication.calculate_days_remaining(&today);
+    Ok(Json(MedicationWithStats {
+        medication,
+        stock,
+        days_remaining,
+    }))
 }

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { createLogEntry, deleteMedication, getMedicationDetails } from '@/api/medications'
 import { MEDICATION_KEYS, useUpdateSnooze } from '@/stores/medications'
-import type { CreateLogEntry } from '@/types/medication'
+import type { CreateLogEntry, MedicationWithStats } from '@/types/medication'
 import { useMutation, useQuery, useQueryCache } from '@pinia/colada'
 import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -31,9 +31,14 @@ const { mutateAsync: deleteAsync } = useMutation({
 
 const { mutateAsync: createLogAsync } = useMutation({
   mutation: (log: CreateLogEntry) => createLogEntry(route.params.id as string, log),
-  onSuccess: (_, log) =>
-    addToast(log.kind === 'refill' ? 'Refill logged' : 'Stock updated', 'success'),
-  onSettled: () => cache.invalidateQueries({ key: MEDICATION_KEYS.root }),
+  onSuccess: (updatedMedication, log) => {
+    addToast(log.kind === 'refill' ? 'Refill logged' : 'Stock updated', 'success')
+    cache.setQueryData(MEDICATION_KEYS.byId(updatedMedication.id), updatedMedication)
+    const { logs: _, ...medicationWithoutLogs } = updatedMedication
+    cache.setQueryData(MEDICATION_KEYS.root, (medications?: MedicationWithStats[]) =>
+      medications?.map((m) => (m.id === medicationWithoutLogs.id ? medicationWithoutLogs : m)),
+    )
+  },
 })
 
 const { mutate: updateSnooze } = useUpdateSnooze()
