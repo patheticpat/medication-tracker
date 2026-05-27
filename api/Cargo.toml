@@ -28,3 +28,6 @@ uuid = { version = "1", features = ["v7", "serde"] }
 webauthn-rs = { version = "0.5.4", features = [
     "danger-allow-state-serialisation",
 ] }
+
+[target.'cfg(target_os = "windows")'.dependencies]
+openssl = { version = "0.10", features = ["vendored"] }
