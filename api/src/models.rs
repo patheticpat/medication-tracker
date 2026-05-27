@@ -308,6 +308,28 @@ impl Medication {
     }
 }
 
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SubscribeRequest {
+    pub endpoint: String,
+    pub p256dh: String,
+    pub auth: String,
+    pub timezone: String,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DeletePushRequest {
+    pub endpoint: String,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct NotificationSettingsRequest {
+    pub notification_hour: i64,
+    pub notification_days: String, // z.B. "0,1,2,3,4,5,6"
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

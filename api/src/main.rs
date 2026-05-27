@@ -15,6 +15,7 @@ use crate::handlers::{
         delete_passkey, list_passkeys, login_begin, login_complete, register_begin,
         register_complete,
     },
+    push::{subscribe, unsubscribe, update_settings},
 };
 #[cfg(debug_assertions)]
 use axum::http::header::{AUTHORIZATION, CONTENT_TYPE, HeaderName};
@@ -39,6 +40,7 @@ pub struct AppState {
     pub pool: SqlitePool,
     pub jwt_secret: String,
     pub webauthn: Arc<Webauthn>,
+    pub vapid_private_key: String,
 }
 
 #[tokio::main]
@@ -63,10 +65,12 @@ async fn main() -> Result<()> {
     let webauthn = WebauthnBuilder::new(&rp_id, &rp_origin)?
         .rp_name("Medication Tracker")
         .build()?;
+    let vapid_private_key = env::var("VAPID_PRIVATE_KEY")?;
     let state = AppState {
         pool,
         jwt_secret,
         webauthn: Arc::new(webauthn),
+        vapid_private_key,
     };
 
     let app = Router::new()
@@ -92,6 +96,8 @@ async fn main() -> Result<()> {
         )
         .route("/medications/{id}/snooze", patch(patch_snooze))
         .route("/medications/{id}/log", post(create_log_entry))
+        .route("/push/subscribe", post(subscribe).delete(unsubscribe))
+        .route("/push/settings", put(update_settings))
         .with_state(state);
 
     #[cfg(debug_assertions)]
@@ -99,7 +105,11 @@ async fn main() -> Result<()> {
         CorsLayer::new()
             .allow_origin(Any)
             .allow_methods(Any)
-            .allow_headers([AUTHORIZATION, CONTENT_TYPE, HeaderName::from_static("x-timezone")]),
+            .allow_headers([
+                AUTHORIZATION,
+                CONTENT_TYPE,
+                HeaderName::from_static("x-timezone"),
+            ]),
     );
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await?;
