@@ -297,19 +297,25 @@ impl Medication {
 
     pub fn calculate_days_remaining(&self, at: &NaiveDate) -> u64 {
         let stock = self.calculate_stock(at);
+
         match self.schedule {
             Schedule::Daily { amount } => (stock / amount).floor() as u64,
             Schedule::Weekly {
                 day_of_week,
                 amount,
             } => {
-                let doses_left = (stock / amount).floor() as i64;
-                let start_wd = at.weekday().num_days_from_sunday() as i64;
-                let offset = (day_of_week as i64 - start_wd + 7) % 7;
-                let offset = if offset == 0 { 7 } else { offset };
-                let first_occurrence = *at + TimeDelta::days(offset);
-                let nth_occurrence = first_occurrence + TimeDelta::days((doses_left - 1) * 7);
-                (nth_occurrence - *at).num_days() as u64
+                let doses_left = (stock / amount).floor() as u64;
+                if doses_left > 0 {
+                    let at_weekday = at.weekday().num_days_from_sunday() as u8;
+                    let days_till_next_dose = if day_of_week > at_weekday {
+                        day_of_week - at_weekday
+                    } else {
+                        day_of_week + 7 - at_weekday
+                    };
+                    days_till_next_dose as u64 + 7 * (doses_left - 1)
+                } else {
+                    0
+                }
             }
         }
     }
@@ -450,5 +456,33 @@ mod tests {
         assert_eq!(medication.calculate_days_remaining(&date("2026-04-11")), 2);
         assert_eq!(medication.calculate_days_remaining(&date("2026-04-12")), 1);
         assert_eq!(medication.calculate_days_remaining(&date("2026-04-13")), 0);
+        // Bug: doses_left=0 on a non-dose-day wraps negative i64 to u64::MAX
+        assert_eq!(medication.calculate_days_remaining(&date("2026-04-14")), 0);
+    }
+
+    #[test]
+    fn test_weekly_remaining_days_partial_dose() {
+        // stock=0.5, amount=1.0 → doses_left=0 but stock != 0.0
+        // fix must guard on doses_left <= 0, not stock == 0.0
+        let medication = Medication {
+            id: Uuid::nil(),
+            name: String::from("ASS"),
+            unit: String::from("Tabletten"),
+            schedule: Schedule::Weekly {
+                day_of_week: 1,
+                amount: 1.,
+            },
+            warning_threshold: 14,
+            snoozed: false,
+            logs: Some(vec![LogEntry::Baseline {
+                id: Uuid::nil(),
+                amount: 0.5, // less than one dose
+                date: date("2026-04-01"),
+                note: None,
+            }]),
+        };
+
+        // stock=0.5 on Wednesday (dose day=Monday): doses_left=0, should return 0
+        assert_eq!(medication.calculate_days_remaining(&date("2026-04-01")), 0);
     }
 }
