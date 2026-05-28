@@ -1,13 +1,21 @@
-use axum::{Json, extract::State, http::StatusCode};
+use axum::{extract::State, http::StatusCode, Json};
 use uuid::Uuid;
 
 use crate::{
-    AppState,
     errors::AppError,
     extractors::Timezone,
     middleware::AuthUser,
-    models::{DeletePushRequest, NotificationSettingsRequest, SubscribeRequest},
+    models::{
+        DeletePushRequest, NotificationSettingsRequest, SubscribeRequest, VapidPublicKeyResponse,
+    },
+    AppState,
 };
+
+pub async fn get_vapid_public_key(State(state): State<AppState>) -> Json<VapidPublicKeyResponse> {
+    Json(VapidPublicKeyResponse {
+        public_key: state.vapid_public_key,
+    })
+}
 
 // subscribe — POST /push/subscribe
 // Legt eine neue Subscription an oder aktualisiert eine bestehende (anhand endpoint). Nutze INSERT OR REPLACE.

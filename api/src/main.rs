@@ -15,7 +15,7 @@ use crate::handlers::{
         delete_passkey, list_passkeys, login_begin, login_complete, register_begin,
         register_complete,
     },
-    push::{subscribe, unsubscribe, update_settings},
+    push::{get_vapid_public_key, subscribe, unsubscribe, update_settings},
 };
 #[cfg(debug_assertions)]
 use axum::http::header::{AUTHORIZATION, CONTENT_TYPE, HeaderName};
@@ -40,6 +40,7 @@ pub struct AppState {
     pub pool: SqlitePool,
     pub jwt_secret: String,
     pub webauthn: Arc<Webauthn>,
+    pub vapid_public_key: String,
     pub vapid_private_key: String,
 }
 
@@ -65,11 +66,14 @@ async fn main() -> Result<()> {
     let webauthn = WebauthnBuilder::new(&rp_id, &rp_origin)?
         .rp_name("Medication Tracker")
         .build()?;
+    let vapid_public_key = env::var("VAPID_PUBLIC_KEY")?;
     let vapid_private_key = env::var("VAPID_PRIVATE_KEY")?;
+
     let state = AppState {
         pool,
         jwt_secret,
         webauthn: Arc::new(webauthn),
+        vapid_public_key,
         vapid_private_key,
     };
 
@@ -96,6 +100,7 @@ async fn main() -> Result<()> {
         )
         .route("/medications/{id}/snooze", patch(patch_snooze))
         .route("/medications/{id}/log", post(create_log_entry))
+        .route("/push/vapid-public-key", get(get_vapid_public_key))
         .route("/push/subscribe", post(subscribe).delete(unsubscribe))
         .route("/push/settings", put(update_settings))
         .with_state(state);

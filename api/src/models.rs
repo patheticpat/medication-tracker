@@ -308,6 +308,12 @@ impl Medication {
     }
 }
 
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct VapidPublicKeyResponse {
+    pub public_key: String,
+}
+
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SubscribeRequest {
