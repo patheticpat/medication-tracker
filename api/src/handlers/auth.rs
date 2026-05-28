@@ -37,10 +37,10 @@ pub async fn register(
     .execute(&state.pool)
     .await
     .map_err(|e| {
-        if let sqlx::Error::Database(db_err) = &e {
-            if db_err.kind() == sqlx::error::ErrorKind::UniqueViolation {
-                return AppError::Conflict(String::from("username already taken"));
-            }
+        if let sqlx::Error::Database(db_err) = &e
+            && db_err.kind() == sqlx::error::ErrorKind::UniqueViolation
+        {
+            return AppError::Conflict(String::from("username already taken"));
         }
         AppError::Database(e)
     })?;
