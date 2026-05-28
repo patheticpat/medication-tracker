@@ -7,6 +7,10 @@ import './assets/main.css'
 import App from './App.vue'
 import router from './router'
 
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js')
+}
+
 const app = createApp(App)
 const pinia = createPinia()
 
