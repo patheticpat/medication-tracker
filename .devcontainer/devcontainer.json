@@ -20,7 +20,6 @@
         "rust-lang.rust-analyzer",
         "vadimcn.vscode-lldb",
         "tamasfe.even-better-toml",
-        "serayuzgur.crates",
         "ms-azuretools.vscode-docker",
         "EditorConfig.EditorConfig",
         "usernamehw.errorlens"
