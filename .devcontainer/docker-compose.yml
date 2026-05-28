@@ -1,0 +1,21 @@
+services:
+  devcontainer:
+    image: mcr.microsoft.com/devcontainers/base:ubuntu-24.04
+    volumes:
+      - ../:/workspace:cached
+      - cargo-target:/workspace/api/target
+      - cargo-registry:/usr/local/cargo/registry
+    command: sleep infinity
+    user: root
+    ports:
+      - "5173:5173"
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=sqlite:/workspace/data/medications.db
+      - JWT_SECRET=dev-secret-change-me
+      - RP_ID=localhost
+      - RP_ORIGIN=http://localhost:5173
+
+volumes:
+  cargo-target:
+  cargo-registry:
