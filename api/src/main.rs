@@ -3,19 +3,25 @@ pub mod extractors;
 pub mod handlers;
 pub mod middleware;
 pub mod models;
+pub mod scheduler;
 pub mod utils;
 
-use crate::handlers::{
-    auth::{change_password, login, register},
-    medications::{
-        create_log_entry, create_medication, delete_medication, health, list_medications,
-        medication_details, patch_snooze, update_medication,
+#[cfg(debug_assertions)]
+use crate::handlers::push::test_push;
+use crate::{
+    handlers::{
+        auth::{change_password, login, register},
+        medications::{
+            create_log_entry, create_medication, delete_medication, health, list_medications,
+            medication_details, patch_snooze, update_medication,
+        },
+        passkey::{
+            delete_passkey, list_passkeys, login_begin, login_complete, register_begin,
+            register_complete,
+        },
+        push::{get_vapid_public_key, subscribe, unsubscribe, update_settings},
     },
-    passkey::{
-        delete_passkey, list_passkeys, login_begin, login_complete, register_begin,
-        register_complete,
-    },
-    push::{get_vapid_public_key, subscribe, unsubscribe, update_settings},
+    scheduler::run,
 };
 #[cfg(debug_assertions)]
 use axum::http::header::{AUTHORIZATION, CONTENT_TYPE, HeaderName};
@@ -26,6 +32,7 @@ use axum::{
 use color_eyre::Result;
 use sqlx::{SqlitePool, sqlite::SqliteConnectOptions};
 use std::{env, str::FromStr, sync::Arc};
+use tokio_cron_scheduler::{Job, JobScheduler};
 #[cfg(debug_assertions)]
 use tower_http::cors::{Any, CorsLayer};
 use webauthn_rs::{Webauthn, WebauthnBuilder, prelude::Url};
@@ -77,6 +84,22 @@ async fn main() -> Result<()> {
         vapid_private_key,
     };
 
+    let scheduler = JobScheduler::new().await?;
+    let scheduler_state = state.clone();
+
+    scheduler
+        .add(Job::new_async("0 0 * * * *", move |_, _| {
+            let state = scheduler_state.clone();
+            Box::pin(async move {
+                if let Err(e) = run(&state).await {
+                    eprintln!("scheduler error: {e}");
+                }
+            })
+        })?)
+        .await?;
+
+    scheduler.start().await?;
+
     let app = Router::new()
         .route("/health", get(health))
         .route("/auth/login", post(login))
@@ -102,8 +125,12 @@ async fn main() -> Result<()> {
         .route("/medications/{id}/log", post(create_log_entry))
         .route("/push/vapid-public-key", get(get_vapid_public_key))
         .route("/push/subscribe", post(subscribe).delete(unsubscribe))
-        .route("/push/settings", put(update_settings))
-        .with_state(state);
+        .route("/push/settings", put(update_settings));
+
+    #[cfg(debug_assertions)]
+    let app = app.route("/push/test", post(test_push));
+
+    let app = app.with_state(state);
 
     #[cfg(debug_assertions)]
     let app = app.layer(

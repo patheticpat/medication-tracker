@@ -4,7 +4,8 @@ set -euo pipefail
 echo "==> Installing system dependencies..."
 sudo apt-get update -qq && sudo apt-get install -y --no-install-recommends \
   pkg-config \
-  libssl-dev
+  libssl-dev \
+  sqlite3
 
 echo "==> Installing sqlx-cli (offline, sqlite only)..."
 cargo install sqlx-cli --no-default-features --features sqlite --locked

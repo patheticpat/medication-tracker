@@ -27,7 +27,7 @@ pub async fn health() -> impl IntoResponse {
     }))
 }
 
-async fn get_all_medications_with_logs(
+pub async fn get_all_medications_with_logs(
     pool: &SqlitePool,
     user_id: &str,
 ) -> Result<Vec<Medication>, AppError> {

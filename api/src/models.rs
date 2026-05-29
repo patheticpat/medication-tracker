@@ -320,7 +320,6 @@ pub struct SubscribeRequest {
     pub endpoint: String,
     pub p256dh: String,
     pub auth: String,
-    pub timezone: String,
 }
 
 #[derive(Debug, Deserialize)]

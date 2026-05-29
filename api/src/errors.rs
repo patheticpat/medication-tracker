@@ -3,6 +3,7 @@ use axum::{
     response::{IntoResponse, Response},
 };
 
+#[derive(Debug)]
 pub enum AppError {
     Database(sqlx::Error),
     NotFound,
@@ -40,3 +41,18 @@ impl From<color_eyre::Report> for AppError {
         AppError::InternalError
     }
 }
+
+impl std::fmt::Display for AppError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            AppError::Database(e) => write!(f, "Database error: {e}"),
+            AppError::NotFound => write!(f, "Not found"),
+            AppError::InternalError => write!(f, "Internal error"),
+            AppError::Unauthorized => write!(f, "Unauthorized"),
+            AppError::BadRequest(msg) => write!(f, "Bad request: {msg}"),
+            AppError::Conflict(msg) => write!(f, "Conflict: {msg}"),
+        }
+    }
+}
+
+impl std::error::Error for AppError {}

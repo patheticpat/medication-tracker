@@ -1,14 +1,14 @@
-use axum::{extract::State, http::StatusCode, Json};
+use axum::{Json, extract::State, http::StatusCode};
 use uuid::Uuid;
 
 use crate::{
+    AppState,
     errors::AppError,
     extractors::Timezone,
     middleware::AuthUser,
     models::{
         DeletePushRequest, NotificationSettingsRequest, SubscribeRequest, VapidPublicKeyResponse,
     },
-    AppState,
 };
 
 pub async fn get_vapid_public_key(State(state): State<AppState>) -> Json<VapidPublicKeyResponse> {
@@ -76,5 +76,18 @@ pub async fn update_settings(
         body.notification_days
     ).execute(&state.pool).await?;
 
+    Ok(StatusCode::NO_CONTENT)
+}
+
+#[cfg(debug_assertions)]
+pub async fn test_push(
+    State(state): State<AppState>,
+    AuthUser(user_id): AuthUser,
+) -> Result<StatusCode, AppError> {
+    use crate::scheduler::notify_user;
+
+    let client = web_push::IsahcWebPushClient::new().map_err(|_| AppError::InternalError)?;
+    let now = chrono::Utc::now().date_naive();
+    let _ = notify_user(&state, &client, &user_id, now).await;
     Ok(StatusCode::NO_CONTENT)
 }

@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT DISTINCT timezone FROM user_notification_settings;",
+  "describe": {
+    "columns": [
+      {
+        "name": "timezone",
+        "ordinal": 0,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "0862bc7fb1ca72cf83addd5e786d1a02980c60bebb7a490917f04dabe0eafdad"
+}
