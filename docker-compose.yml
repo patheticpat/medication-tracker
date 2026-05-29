@@ -20,6 +20,7 @@ services:
     build: ./api
     networks:
       - internal
+      - default
     platform: linux/amd64
     volumes:
       - ./data:/data
@@ -27,6 +28,8 @@ services:
       - JWT_SECRET=${JWT_SECRET}
       - RP_ID=${RP_ID}
       - RP_ORIGIN=${RP_ORIGIN}
+      - VAPID_SUBJECT=${VAPID_SUBJECT}
+      - VAPID_PRIVATE_KEY=${VAPID_PRIVATE_KEY}
       - DATABASE_URL=sqlite:/data/medications.db
     restart: unless-stopped
 
