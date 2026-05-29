@@ -2,14 +2,14 @@
 import { apiUrl } from '@/api/base'
 import { deletePasskey, getPasskeys, registerPasskey } from '@/api/passkey'
 import { KeyRound } from 'lucide-vue-next'
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import { useQuery, useQueryCache, useMutation } from '@pinia/colada'
 import { Trash2 } from 'lucide-vue-next'
 import { changePassword } from '@/api/auth'
 import { useToast } from '@/composables/useToast'
 import { Bell, BellOff } from 'lucide-vue-next'
 import { usePush } from '@/composables/usePush'
-import { updateNotificationSettings } from '@/api/push'
+import { updateNotificationSettings, getNotificationSettings } from '@/api/push'
 
 declare const __GIT_SHA__: string
 
@@ -25,6 +25,22 @@ const {
   isLoading,
   error,
 } = useQuery({ key: () => ['PASSKEYS'], query: () => getPasskeys() })
+
+const { data: notificationSettings } = useQuery({
+  key: () => ['NOTIFICATION_SETTINGS'],
+  query: () => getNotificationSettings(),
+})
+
+watch(
+  notificationSettings,
+  (settings) => {
+    if (settings) {
+      notificationHour.value = settings.notificationHour
+      notificationDays.value = settings.notificationDays.split(',').map(Number)
+    }
+  },
+  { immediate: true },
+)
 
 const { mutateAsync: deletePasskeyAsync } = useMutation({
   mutation: (id: string) => deletePasskey(id),
@@ -73,10 +89,10 @@ const handleChangePassword = async () => {
   }
 }
 
-const { isSupported, isLoading: pushLoading, permission, enable, disable } = usePush()
+const { isSupported, isSubscribed, isLoading: pushLoading, permission, enable, disable } = usePush()
 
 const notificationHour = ref(8)
-const notificationDays = ref<number[]>([0, 1, 2, 3, 4, 5, 6])
+const notificationDays = ref('0,1,2,3,4,5,6')
 
 const DAYS = [
   { label: 'Mo', value: 1 },
@@ -219,7 +235,7 @@ const shortId = (id: string) => id.slice(0, 8) + '…'
       <div v-else class="flex flex-col gap-4">
         <div class="flex items-center gap-3">
           <button
-            v-if="permission !== 'granted'"
+            v-if="!isSubscribed"
             @click="enable"
             :disabled="pushLoading || permission === 'denied'"
             class="flex items-center gap-2 bg-blue-600 text-white text-sm rounded-md px-4 py-2 hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -241,7 +257,7 @@ const shortId = (id: string) => id.slice(0, 8) + '…'
           </span>
         </div>
 
-        <div v-if="permission === 'granted'" class="flex flex-col gap-3">
+        <div v-if="isSubscribed" class="flex flex-col gap-3">
           <div class="flex flex-col gap-1">
             <label class="text-xs text-gray-500">Notification time</label>
             <input

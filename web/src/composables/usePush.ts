@@ -1,4 +1,4 @@
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { getVapidPublicKey, subscribePush, unsubscribePush } from '@/api/push'
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array<ArrayBuffer> {
@@ -11,12 +11,20 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array<ArrayBuffer> {
 export function usePush() {
   const isLoading = ref(false)
   const error = ref<string | null>(null)
+  const isSubscribed = ref(false)
 
   const isSupported = computed(() => 'serviceWorker' in navigator && 'PushManager' in window)
 
   const permission = ref<NotificationPermission>(
     isSupported.value ? Notification.permission : 'denied',
   )
+
+  async function checkSubscription() {
+    if (!isSupported.value) return
+    const registration = await navigator.serviceWorker.ready
+    const existing = await registration.pushManager.getSubscription()
+    isSubscribed.value = existing !== null
+  }
 
   async function enable() {
     if (!isSupported.value) return
@@ -34,6 +42,7 @@ export function usePush() {
         applicationServerKey: urlBase64ToUint8Array(vapid_public_key),
       })
       await subscribePush(subscription.toJSON())
+      isSubscribed.value = true
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Unbekannter Fehler'
     } finally {
@@ -51,6 +60,7 @@ export function usePush() {
       if (subscription) {
         await unsubscribePush(subscription.endpoint)
         await subscription.unsubscribe()
+        isSubscribed.value = false
       }
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Unbekannter Fehler'
@@ -59,5 +69,7 @@ export function usePush() {
     }
   }
 
-  return { isSupported, isLoading, error, permission, enable, disable }
+  onMounted(checkSubscription)
+
+  return { isSupported, isLoading, error, permission, isSubscribed, enable, disable }
 }

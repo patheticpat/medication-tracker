@@ -335,6 +335,22 @@ pub struct NotificationSettingsRequest {
     pub notification_days: String, // z.B. "0,1,2,3,4,5,6"
 }
 
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct NotificationSettingsResponse {
+    pub notification_hour: i64,
+    pub notification_days: String,
+}
+
+impl Default for NotificationSettingsResponse {
+    fn default() -> Self {
+        Self {
+            notification_hour: 8,
+            notification_days: String::from("0,1,2,3,4,5,6"),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

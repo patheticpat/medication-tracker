@@ -39,7 +39,6 @@ pub async fn notify_user<W: WebPushClient>(
         .iter()
         .filter(|m| !m.snoozed && m.calculate_days_remaining(&now) <= m.warning_threshold as u64)
         .count();
-    eprintln!("{count} medications running low.");
     if count > 0 {
         let subscriptions = sqlx::query!(
             r#"SELECT endpoint, p256dh, auth FROM push_subscriptions WHERE user_id=?"#,
@@ -47,20 +46,17 @@ pub async fn notify_user<W: WebPushClient>(
         )
         .fetch_all(&state.pool)
         .await?;
-        eprintln!("{} subscriptions for user.", subscriptions.len());
         let body = serde_json::json!({
             "title": "Medication Tracker",
             "body": format!("{} Medikament(e) laufen bald ab", count)
         })
         .to_string();
-        eprintln!("{body}");
         for subscription in subscriptions {
             let subscription_info = SubscriptionInfo::new(
                 subscription.endpoint,
                 subscription.p256dh,
                 subscription.auth,
             );
-            eprintln!("{subscription_info:?}");
             let _ = send_notification(state, client, &subscription_info, body.as_bytes()).await;
         }
     }
@@ -73,20 +69,17 @@ async fn send_notification<W: WebPushClient>(
     subscription_info: &SubscriptionInfo,
     content: &[u8],
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let sig_builder = VapidSignatureBuilder::from_base64(
+    let mut sig_builder = VapidSignatureBuilder::from_base64(
         &state.vapid_private_key,
         URL_SAFE_NO_PAD,
         subscription_info,
     )?;
+    sig_builder.add_claim::<&str>("sub", state.vapid_subject.as_ref());
     let signature = sig_builder.build()?;
     let mut message = WebPushMessageBuilder::new(subscription_info);
     message.set_payload(web_push::ContentEncoding::Aes128Gcm, content);
     message.set_vapid_signature(signature);
     let message = message.build()?;
-    if let Err(e) = client.send(message).await {
-        eprintln!("{e}");
-    } else {
-        eprintln!("message sent");
-    }
+    client.send(message).await?;
     Ok(())
 }

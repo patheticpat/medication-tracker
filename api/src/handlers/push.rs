@@ -1,5 +1,7 @@
 use axum::{Json, extract::State, http::StatusCode};
+use base64::{Engine, prelude::BASE64_URL_SAFE_NO_PAD};
 use uuid::Uuid;
+use web_push::{URL_SAFE_NO_PAD, VapidSignatureBuilder};
 
 use crate::{
     AppState,
@@ -7,13 +9,18 @@ use crate::{
     extractors::Timezone,
     middleware::AuthUser,
     models::{
-        DeletePushRequest, NotificationSettingsRequest, SubscribeRequest, VapidPublicKeyResponse,
+        DeletePushRequest, NotificationSettingsRequest, NotificationSettingsResponse,
+        SubscribeRequest, VapidPublicKeyResponse,
     },
 };
 
 pub async fn get_vapid_public_key(State(state): State<AppState>) -> Json<VapidPublicKeyResponse> {
+    let builder =
+        VapidSignatureBuilder::from_base64_no_sub(&state.vapid_private_key, URL_SAFE_NO_PAD)
+            .unwrap();
+    let public_key = builder.get_public_key();
     Json(VapidPublicKeyResponse {
-        public_key: state.vapid_public_key,
+        public_key: BASE64_URL_SAFE_NO_PAD.encode(&public_key),
     })
 }
 
@@ -77,6 +84,23 @@ pub async fn update_settings(
     ).execute(&state.pool).await?;
 
     Ok(StatusCode::NO_CONTENT)
+}
+
+pub async fn get_settings(
+    State(state): State<AppState>,
+    AuthUser(user_id): AuthUser,
+) -> Result<Json<NotificationSettingsResponse>, AppError> {
+    let r = sqlx::query!(
+        r#"SELECT notification_hour, notification_days FROM user_notification_settings WHERE user_id=?;"#,
+        user_id
+    ).fetch_optional(&state.pool).await?;
+    Ok(Json(
+        r.map(|settings| NotificationSettingsResponse {
+            notification_hour: settings.notification_hour,
+            notification_days: settings.notification_days,
+        })
+        .unwrap_or_default(),
+    ))
 }
 
 #[cfg(debug_assertions)]

@@ -19,7 +19,7 @@ use crate::{
             delete_passkey, list_passkeys, login_begin, login_complete, register_begin,
             register_complete,
         },
-        push::{get_vapid_public_key, subscribe, unsubscribe, update_settings},
+        push::{get_settings, get_vapid_public_key, subscribe, unsubscribe, update_settings},
     },
     scheduler::run,
 };
@@ -47,8 +47,8 @@ pub struct AppState {
     pub pool: SqlitePool,
     pub jwt_secret: String,
     pub webauthn: Arc<Webauthn>,
-    pub vapid_public_key: String,
     pub vapid_private_key: String,
+    pub vapid_subject: String,
 }
 
 #[tokio::main]
@@ -73,15 +73,15 @@ async fn main() -> Result<()> {
     let webauthn = WebauthnBuilder::new(&rp_id, &rp_origin)?
         .rp_name("Medication Tracker")
         .build()?;
-    let vapid_public_key = env::var("VAPID_PUBLIC_KEY")?;
     let vapid_private_key = env::var("VAPID_PRIVATE_KEY")?;
+    let vapid_subject = env::var("VAPID_SUBJECT")?;
 
     let state = AppState {
         pool,
         jwt_secret,
         webauthn: Arc::new(webauthn),
-        vapid_public_key,
         vapid_private_key,
+        vapid_subject,
     };
 
     let scheduler = JobScheduler::new().await?;
@@ -125,7 +125,7 @@ async fn main() -> Result<()> {
         .route("/medications/{id}/log", post(create_log_entry))
         .route("/push/vapid-public-key", get(get_vapid_public_key))
         .route("/push/subscribe", post(subscribe).delete(unsubscribe))
-        .route("/push/settings", put(update_settings));
+        .route("/push/settings", get(get_settings).put(update_settings));
 
     #[cfg(debug_assertions)]
     let app = app.route("/push/test", post(test_push));

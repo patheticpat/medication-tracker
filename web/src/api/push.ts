@@ -1,3 +1,4 @@
+import type { NotificationSettings } from '@/types/push'
 import { apiUrl, authHeaders, handleResponse } from './base'
 
 export async function getVapidPublicKey(): Promise<string> {
@@ -27,14 +28,18 @@ export async function unsubscribePush(endpoint: string): Promise<void> {
   await handleResponse<void>(r)
 }
 
-export async function updateNotificationSettings(settings: {
-  notificationHour: number
-  notificationDays: string
-}): Promise<void> {
+export async function updateNotificationSettings(settings: NotificationSettings): Promise<void> {
   const r = await fetch(apiUrl('/push/settings'), {
     method: 'PUT',
     headers: authHeaders(true),
     body: JSON.stringify(settings),
   })
   await handleResponse<void>(r)
+}
+
+export async function getNotificationSettings(): Promise<NotificationSettings> {
+  const r = await fetch(apiUrl('/push/settings'), {
+    headers: authHeaders(true),
+  })
+  return await handleResponse(r)
 }
