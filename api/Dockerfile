@@ -16,7 +16,7 @@ ARG GIT_SHA=unknown
 ENV GIT_SHA=$GIT_SHA
 RUN touch src/main.rs && cargo build --release
 
-FROM debian:bookworm-slim
+FROM debian:trixie-slim
 WORKDIR /app
 COPY --from=builder /app/target/release/api .
 RUN apt-get update && apt-get install -y libssl3 ca-certificates && rm -rf /var/lib/apt/lists/*
