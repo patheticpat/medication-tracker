@@ -43,3 +43,12 @@ export async function getNotificationSettings(): Promise<NotificationSettings> {
   })
   return await handleResponse(r)
 }
+
+export async function testPush(endpoint: string): Promise<void> {
+  const r = await fetch(apiUrl('/push/test'), {
+    method: 'POST',
+    headers: authHeaders(true),
+    body: JSON.stringify({ endpoint }),
+  })
+  await handleResponse<void>(r)
+}

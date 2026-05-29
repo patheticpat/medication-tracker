@@ -26,6 +26,9 @@ const {
   error,
 } = useQuery({ key: () => ['PASSKEYS'], query: () => getPasskeys() })
 
+const notificationHour = ref(8)
+const notificationDays = ref([0, 1, 2, 3, 4, 5, 6])
+
 const { data: notificationSettings } = useQuery({
   key: () => ['NOTIFICATION_SETTINGS'],
   query: () => getNotificationSettings(),
@@ -89,10 +92,22 @@ const handleChangePassword = async () => {
   }
 }
 
-const { isSupported, isSubscribed, isLoading: pushLoading, permission, enable, disable } = usePush()
+const {
+  isSupported,
+  isSubscribed,
+  isLoading: pushLoading,
+  permission,
+  enable,
+  disable,
+  sendTestPush,
+  error: pushError,
+} = usePush()
 
-const notificationHour = ref(8)
-const notificationDays = ref('0,1,2,3,4,5,6')
+watch(pushError, (error) => {
+  if (error && error.length > 0) {
+    addToast(error, 'error')
+  }
+})
 
 const DAYS = [
   { label: 'Mo', value: 1 },
@@ -293,6 +308,12 @@ const shortId = (id: string) => id.slice(0, 8) + '…'
             class="self-start text-sm text-white bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded transition-colors"
           >
             Save settings
+          </button>
+          <button
+            @click="sendTestPush"
+            class="self-start text-sm text-white bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded transition-colors"
+          >
+            Send test notification
           </button>
         </div>
       </div>

@@ -1,5 +1,5 @@
 import { ref, computed, onMounted } from 'vue'
-import { getVapidPublicKey, subscribePush, unsubscribePush } from '@/api/push'
+import { getVapidPublicKey, subscribePush, testPush, unsubscribePush } from '@/api/push'
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array<ArrayBuffer> {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4)
@@ -69,7 +69,23 @@ export function usePush() {
     }
   }
 
+  async function sendTestPush() {
+    if (!isSupported.value) return
+    isLoading.value = true
+    error.value = null
+    try {
+      const registration = await navigator.serviceWorker.ready
+      const subscription = await registration.pushManager.getSubscription()
+      if (!subscription) return
+      await testPush(subscription.endpoint)
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : 'Unbekannter Fehler'
+    } finally {
+      isLoading.value = false
+    }
+  }
+
   onMounted(checkSubscription)
 
-  return { isSupported, isLoading, error, permission, isSubscribed, enable, disable }
+  return { isSupported, isLoading, error, permission, isSubscribed, enable, disable, sendTestPush }
 }

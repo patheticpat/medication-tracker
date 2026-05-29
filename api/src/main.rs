@@ -6,8 +6,6 @@ pub mod models;
 pub mod scheduler;
 pub mod utils;
 
-#[cfg(debug_assertions)]
-use crate::handlers::push::test_push;
 use crate::{
     handlers::{
         auth::{change_password, login, register},
@@ -19,7 +17,9 @@ use crate::{
             delete_passkey, list_passkeys, login_begin, login_complete, register_begin,
             register_complete,
         },
-        push::{get_settings, get_vapid_public_key, subscribe, unsubscribe, update_settings},
+        push::{
+            get_settings, get_vapid_public_key, subscribe, test_push, unsubscribe, update_settings,
+        },
     },
     scheduler::run,
 };
@@ -125,12 +125,9 @@ async fn main() -> Result<()> {
         .route("/medications/{id}/log", post(create_log_entry))
         .route("/push/vapid-public-key", get(get_vapid_public_key))
         .route("/push/subscribe", post(subscribe).delete(unsubscribe))
-        .route("/push/settings", get(get_settings).put(update_settings));
-
-    #[cfg(debug_assertions)]
-    let app = app.route("/push/test", post(test_push));
-
-    let app = app.with_state(state);
+        .route("/push/settings", get(get_settings).put(update_settings))
+        .route("/push/test", post(test_push))
+        .with_state(state);
 
     #[cfg(debug_assertions)]
     let app = app.layer(

@@ -330,6 +330,12 @@ pub struct DeletePushRequest {
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub struct TestPushRequest {
+    pub endpoint: String,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct NotificationSettingsRequest {
     pub notification_hour: i64,
     pub notification_days: String, // z.B. "0,1,2,3,4,5,6"

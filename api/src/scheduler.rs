@@ -63,7 +63,7 @@ pub async fn notify_user<W: WebPushClient>(
     Ok(())
 }
 
-async fn send_notification<W: WebPushClient>(
+pub async fn send_notification<W: WebPushClient>(
     state: &AppState,
     client: &W,
     subscription_info: &SubscriptionInfo,

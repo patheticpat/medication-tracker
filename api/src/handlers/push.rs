@@ -1,7 +1,7 @@
 use axum::{Json, extract::State, http::StatusCode};
 use base64::{Engine, prelude::BASE64_URL_SAFE_NO_PAD};
 use uuid::Uuid;
-use web_push::{URL_SAFE_NO_PAD, VapidSignatureBuilder};
+use web_push::{SubscriptionInfo, URL_SAFE_NO_PAD, VapidSignatureBuilder};
 
 use crate::{
     AppState,
@@ -10,8 +10,9 @@ use crate::{
     middleware::AuthUser,
     models::{
         DeletePushRequest, NotificationSettingsRequest, NotificationSettingsResponse,
-        SubscribeRequest, VapidPublicKeyResponse,
+        SubscribeRequest, TestPushRequest, VapidPublicKeyResponse,
     },
+    scheduler::send_notification,
 };
 
 pub async fn get_vapid_public_key(State(state): State<AppState>) -> Json<VapidPublicKeyResponse> {
@@ -103,15 +104,30 @@ pub async fn get_settings(
     ))
 }
 
-#[cfg(debug_assertions)]
 pub async fn test_push(
     State(state): State<AppState>,
     AuthUser(user_id): AuthUser,
+    Json(body): Json<TestPushRequest>,
 ) -> Result<StatusCode, AppError> {
-    use crate::scheduler::notify_user;
-
     let client = web_push::IsahcWebPushClient::new().map_err(|_| AppError::InternalError)?;
-    let now = chrono::Utc::now().date_naive();
-    let _ = notify_user(&state, &client, &user_id, now).await;
+    let subscription = sqlx::query!(
+        r#"SELECT endpoint, p256dh, auth FROM push_subscriptions WHERE user_id=? AND endpoint=?;"#,
+        user_id,
+        body.endpoint,
+    )
+    .fetch_one(&state.pool)
+    .await?;
+    let body = serde_json::json!({
+        "title": "Medication Tracker",
+        "body": "This is a test notification",
+    })
+    .to_string();
+
+    let subscription_info = SubscriptionInfo::new(
+        subscription.endpoint,
+        subscription.p256dh,
+        subscription.auth,
+    );
+    let _ = send_notification(&state, &client, &subscription_info, body.as_bytes()).await;
     Ok(StatusCode::NO_CONTENT)
 }
