@@ -128,6 +128,10 @@ pub async fn test_push(
         subscription.p256dh,
         subscription.auth,
     );
-    let _ = send_notification(&state, &client, &subscription_info, body.as_bytes()).await;
-    Ok(StatusCode::NO_CONTENT)
+    if let Err(e) = send_notification(&state, &client, &subscription_info, body.as_bytes()).await {
+        eprintln!("send_notification error: {e:?}");
+        Err(AppError::InternalError)
+    } else {
+        Ok(StatusCode::NO_CONTENT)
+    }
 }
