@@ -15,7 +15,19 @@ pub async fn run(state: &AppState) -> Result<(), Box<dyn Error>> {
         let local_now = chrono::Utc::now().with_timezone(&tz);
         let (hour, day) = (local_now.hour(), local_now.weekday().num_days_from_sunday());
 
-        let user_rows = sqlx::query!(r#"SELECT user_id AS 'user_id!' FROM user_notification_settings WHERE timezone=? AND notification_hour=? AND notification_days LIKE '%' || ? || '%';"#, row.timezone, hour, day).fetch_all(&state.pool).await?;
+        // Load all users that are due at the current time _and_ have at least one active push_subscription
+        let user_rows = sqlx::query!(
+            r#"SELECT DISTINCT s.user_id AS 'user_id!'
+               FROM user_notification_settings s
+               JOIN push_subscriptions p
+               ON s.user_id = p.user_id
+               WHERE timezone=? AND notification_hour=? AND notification_days LIKE '%' || ? || '%';"#,
+            row.timezone,
+            hour,
+            day,
+        )
+        .fetch_all(&state.pool)
+        .await?;
 
         for user in user_rows {
             let _ = notify_user(state, &user.user_id, local_now.date_naive()).await;
@@ -31,7 +43,7 @@ pub async fn notify_user(
 ) -> Result<(), Box<dyn Error>> {
     let medications = get_all_medications_with_logs(&state.pool, user_id).await?;
     let count = medications
-        .iter()
+        .into_iter()
         .filter(|m| !m.snoozed && m.calculate_days_remaining(&now) <= m.warning_threshold as u64)
         .count();
     if count > 0 {
@@ -67,9 +79,11 @@ pub async fn send_notification(
     let mut sig_builder = sig_builder.add_sub_info(subscription_info);
     sig_builder.add_claim::<&str>("sub", state.vapid_subject.as_ref());
     let signature = sig_builder.build()?;
+
     let mut message = WebPushMessageBuilder::new(subscription_info);
     message.set_payload(web_push::ContentEncoding::Aes128Gcm, content);
     message.set_vapid_signature(signature);
+
     let message = message.build()?;
     state.push_client.send(message).await.map_err(Into::into)
 }

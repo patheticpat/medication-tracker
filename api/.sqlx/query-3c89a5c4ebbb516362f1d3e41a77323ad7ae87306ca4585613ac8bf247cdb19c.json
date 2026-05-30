@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT DISTINCT s.user_id AS 'user_id!'\n               FROM user_notification_settings s\n               JOIN push_subscriptions p\n               ON s.user_id = p.user_id\n               WHERE timezone=? AND notification_hour=? AND notification_days LIKE '%' || ? || '%';",
+  "describe": {
+    "columns": [
+      {
+        "name": "user_id!",
+        "ordinal": 0,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": [
+      true
+    ]
+  },
+  "hash": "3c89a5c4ebbb516362f1d3e41a77323ad7ae87306ca4585613ac8bf247cdb19c"
+}
