@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "\n        DELETE\n        FROM passkey_challenges\n        WHERE timestamp < unixepoch('now', '-300 seconds')\n        ;\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": []
+  },
+  "hash": "7cb4d7e8482b11b65645fea6bcf75cf8120f11597206fc52c82cd6a7665d7592"
+}

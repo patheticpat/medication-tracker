@@ -1,0 +1,68 @@
+{
+  "db_name": "SQLite",
+  "query": "\n        SELECT\n            id AS 'id!',\n            user_id,\n            name,\n            unit,\n            schedule_kind,\n            schedule_amount,\n            schedule_day_of_week,\n            warning_threshold,\n            snoozed\n        FROM medications\n        WHERE id = ? AND user_id = ?\n        ",
+  "describe": {
+    "columns": [
+      {
+        "name": "id!",
+        "ordinal": 0,
+        "type_info": "Text"
+      },
+      {
+        "name": "user_id",
+        "ordinal": 1,
+        "type_info": "Text"
+      },
+      {
+        "name": "name",
+        "ordinal": 2,
+        "type_info": "Text"
+      },
+      {
+        "name": "unit",
+        "ordinal": 3,
+        "type_info": "Text"
+      },
+      {
+        "name": "schedule_kind",
+        "ordinal": 4,
+        "type_info": "Text"
+      },
+      {
+        "name": "schedule_amount",
+        "ordinal": 5,
+        "type_info": "Float"
+      },
+      {
+        "name": "schedule_day_of_week",
+        "ordinal": 6,
+        "type_info": "Integer"
+      },
+      {
+        "name": "warning_threshold",
+        "ordinal": 7,
+        "type_info": "Integer"
+      },
+      {
+        "name": "snoozed",
+        "ordinal": 8,
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": [
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "f5a152484cdbc77843fabd0159d59d710833f75abda310f1fb9d81b648d72048"
+}

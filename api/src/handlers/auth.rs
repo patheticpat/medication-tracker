@@ -39,7 +39,7 @@ pub async fn register(
     // 2. User in DB speichern
     let id = Uuid::now_v7().to_string();
     sqlx::query!(
-        r#"INSERT INTO users (id, username, password_hash) VALUES (?, ?, ?)"#,
+        "INSERT INTO users (id, username, password_hash) VALUES (?, ?, ?)",
         id,
         body.username,
         password_hash,
@@ -69,7 +69,7 @@ pub async fn login(
     }
 
     let user = sqlx::query!(
-        r#"SELECT id AS "id!", password_hash FROM users WHERE username=?"#,
+        r#"SELECT id AS "id!", password_hash FROM users WHERE username = ?"#,
         body.username
     )
     .fetch_optional(&state.pool)
@@ -101,7 +101,7 @@ pub async fn change_password(
         return Err(AppError::BadRequest(String::from("password too long")));
     }
     // 1. User aus DB laden (SELECT password_hash FROM users WHERE id=?)
-    let row = sqlx::query!(r#"SELECT password_hash FROM users WHERE id=?"#, user_id)
+    let row = sqlx::query!("SELECT password_hash FROM users WHERE id = ?", user_id)
         .fetch_one(&state.pool)
         .await?;
 
@@ -129,7 +129,7 @@ pub async fn change_password(
 
     // 4. Hash in DB speichern (UPDATE users SET password_hash=? WHERE id=?)
     let r = sqlx::query!(
-        r#"UPDATE users SET password_hash=? WHERE id=?"#,
+        "UPDATE users SET password_hash = ? WHERE id = ?",
         password_hash,
         user_id
     )

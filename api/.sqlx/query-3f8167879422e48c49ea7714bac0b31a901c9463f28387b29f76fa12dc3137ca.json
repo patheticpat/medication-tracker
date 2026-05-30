@@ -1,0 +1,98 @@
+{
+  "db_name": "SQLite",
+  "query": "\n        SELECT\n            m.id AS 'id!',\n            m.user_id,\n            m.name,\n            m.unit,\n            m.schedule_kind,\n            m.schedule_amount,\n            m.schedule_day_of_week,\n            m.warning_threshold,\n            m.snoozed,\n            l.id AS log_id, l.kind AS log_kind, l.amount AS log_amount,\n            l.date AS \"log_date: NaiveDate\", l.note AS log_note\n        FROM medications m LEFT JOIN log_entries l ON m.id = l.medication_id\n        WHERE m.user_id = ? AND m.id = ?\n        ORDER BY m.id, l.date, l.id\n        ",
+  "describe": {
+    "columns": [
+      {
+        "name": "id!",
+        "ordinal": 0,
+        "type_info": "Text"
+      },
+      {
+        "name": "user_id",
+        "ordinal": 1,
+        "type_info": "Text"
+      },
+      {
+        "name": "name",
+        "ordinal": 2,
+        "type_info": "Text"
+      },
+      {
+        "name": "unit",
+        "ordinal": 3,
+        "type_info": "Text"
+      },
+      {
+        "name": "schedule_kind",
+        "ordinal": 4,
+        "type_info": "Text"
+      },
+      {
+        "name": "schedule_amount",
+        "ordinal": 5,
+        "type_info": "Float"
+      },
+      {
+        "name": "schedule_day_of_week",
+        "ordinal": 6,
+        "type_info": "Integer"
+      },
+      {
+        "name": "warning_threshold",
+        "ordinal": 7,
+        "type_info": "Integer"
+      },
+      {
+        "name": "snoozed",
+        "ordinal": 8,
+        "type_info": "Bool"
+      },
+      {
+        "name": "log_id",
+        "ordinal": 9,
+        "type_info": "Text"
+      },
+      {
+        "name": "log_kind",
+        "ordinal": 10,
+        "type_info": "Text"
+      },
+      {
+        "name": "log_amount",
+        "ordinal": 11,
+        "type_info": "Float"
+      },
+      {
+        "name": "log_date: NaiveDate",
+        "ordinal": 12,
+        "type_info": "Text"
+      },
+      {
+        "name": "log_note",
+        "ordinal": 13,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": [
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      true
+    ]
+  },
+  "hash": "3f8167879422e48c49ea7714bac0b31a901c9463f28387b29f76fa12dc3137ca"
+}

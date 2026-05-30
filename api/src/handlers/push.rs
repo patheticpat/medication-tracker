@@ -35,8 +35,17 @@ pub async fn subscribe(
     let uuid = uuid.to_string();
     let created_at = chrono::Utc::now();
     sqlx::query!(
-        r#"INSERT OR IGNORE INTO push_subscriptions (id, user_id, endpoint, p256dh, auth, created_at) VALUES (?, ?, ?, ?, ?, ?);"#,
-       uuid, user_id, body.endpoint, body.p256dh, body.auth, created_at
+        r"
+        INSERT OR IGNORE INTO push_subscriptions (
+            id, user_id, endpoint, p256dh, auth, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?);
+        ",
+        uuid,
+        user_id,
+        body.endpoint,
+        body.p256dh,
+        body.auth,
+        created_at
     )
     .execute(&state.pool)
     .await?;
@@ -53,7 +62,7 @@ pub async fn unsubscribe(
     Json(body): Json<DeletePushRequest>,
 ) -> Result<StatusCode, AppError> {
     sqlx::query!(
-        r#"DELETE FROM push_subscriptions WHERE endpoint=? AND user_id=?"#,
+        "DELETE FROM push_subscriptions WHERE endpoint = ? AND user_id = ?",
         body.endpoint,
         user_id
     )
@@ -65,7 +74,6 @@ pub async fn unsubscribe(
 
 // update_settings — PUT /push/settings
 // Nutze INSERT OR REPLACE INTO user_notification_settings. Gibt NO_CONTENT zurück.
-
 pub async fn update_settings(
     State(state): State<AppState>,
     AuthUser(user_id): AuthUser,
@@ -87,12 +95,18 @@ pub async fn update_settings(
     }
 
     sqlx::query!(
-        r#"INSERT OR REPLACE INTO user_notification_settings (user_id, timezone, notification_hour, notification_days) VALUES (?, ?, ?, ?);"#,
+        r"
+        INSERT OR REPLACE INTO user_notification_settings (
+            user_id, timezone, notification_hour, notification_days
+        ) VALUES (?, ?, ?, ?);
+        ",
         user_id,
         timezone,
         body.notification_hour,
         body.notification_days
-    ).execute(&state.pool).await?;
+    )
+    .execute(&state.pool)
+    .await?;
 
     Ok(StatusCode::NO_CONTENT)
 }
@@ -102,9 +116,16 @@ pub async fn get_settings(
     AuthUser(user_id): AuthUser,
 ) -> Result<Json<NotificationSettingsResponse>, AppError> {
     let r = sqlx::query!(
-        r#"SELECT notification_hour, notification_days FROM user_notification_settings WHERE user_id=?;"#,
+        r"
+        SELECT notification_hour, notification_days
+        FROM user_notification_settings
+        WHERE user_id
+        = ? ;
+        ",
         user_id
-    ).fetch_optional(&state.pool).await?;
+    )
+    .fetch_optional(&state.pool)
+    .await?;
     Ok(Json(
         r.map(|settings| NotificationSettingsResponse {
             notification_hour: settings.notification_hour,
@@ -120,7 +141,12 @@ pub async fn test_push(
     Json(body): Json<TestPushRequest>,
 ) -> Result<StatusCode, AppError> {
     let subscription = sqlx::query!(
-        r#"SELECT endpoint, p256dh, auth FROM push_subscriptions WHERE user_id=? AND endpoint=?;"#,
+        r"
+        SELECT endpoint, p256dh, auth
+        FROM push_subscriptions
+        WHERE user_id
+        = ? AND endpoint = ? ;
+        ",
         user_id,
         body.endpoint,
     )

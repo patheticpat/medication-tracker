@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "UPDATE medications SET snoozed = FALSE WHERE id = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": []
+  },
+  "hash": "30a607aca367cc9094d66eb03ca30769262524450fbcec70c09b50744bd7bc1e"
+}

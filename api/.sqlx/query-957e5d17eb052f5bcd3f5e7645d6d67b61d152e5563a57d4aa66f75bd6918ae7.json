@@ -1,0 +1,26 @@
+{
+  "db_name": "SQLite",
+  "query": "\n        SELECT users.id AS \"id!\", credentials.passkey\n        FROM users\n        JOIN credentials ON users.id = credentials.user_id\n        WHERE users.username\n        = ?\n        ",
+  "describe": {
+    "columns": [
+      {
+        "name": "id!",
+        "ordinal": 0,
+        "type_info": "Text"
+      },
+      {
+        "name": "passkey",
+        "ordinal": 1,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      true,
+      false
+    ]
+  },
+  "hash": "957e5d17eb052f5bcd3f5e7645d6d67b61d152e5563a57d4aa66f75bd6918ae7"
+}

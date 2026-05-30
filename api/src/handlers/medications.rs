@@ -32,12 +32,23 @@ pub async fn get_all_medications_with_logs(
     user_id: &str,
 ) -> Result<Vec<Medication>, AppError> {
     let rows = sqlx::query_as!(DbMedicationWithLogRow,
-        r#"SELECT m.id AS 'id!', m.user_id, m.name, m.unit, m.schedule_kind, m.schedule_amount, m.schedule_day_of_week, m.warning_threshold, m.snoozed,
-                l.id AS log_id, l.kind AS log_kind, l.amount AS log_amount,
-                l.date AS "log_date: NaiveDate", l.note AS log_note
-            FROM medications m LEFT JOIN log_entries l ON m.id = l.medication_id
-            WHERE m.user_id=?
-            ORDER BY m.id, l.date, l.id"#, user_id).fetch_all(pool).await?;
+        r#"
+        SELECT
+            m.id AS 'id!',
+            m.user_id,
+            m.name,
+            m.unit,
+            m.schedule_kind,
+            m.schedule_amount,
+            m.schedule_day_of_week,
+            m.warning_threshold,
+            m.snoozed,
+            l.id AS log_id, l.kind AS log_kind, l.amount AS log_amount,
+            l.date AS "log_date: NaiveDate", l.note AS log_note
+        FROM medications m LEFT JOIN log_entries l ON m.id = l.medication_id
+        WHERE m.user_id = ?
+        ORDER BY m.id, l.date, l.id
+        "#, user_id).fetch_all(pool).await?;
 
     let mut medications: Vec<Medication> = Vec::new();
     let mut current_id = String::new();
@@ -112,12 +123,23 @@ async fn get_medication_with_logs(
     user_id: &str,
 ) -> Result<Medication, AppError> {
     let rows = sqlx::query_as!(DbMedicationWithLogRow,
-        r#"SELECT m.id AS 'id!', m.user_id, m.name, m.unit, m.schedule_kind, m.schedule_amount, m.schedule_day_of_week, m.warning_threshold, m.snoozed,
-                l.id AS log_id, l.kind AS log_kind, l.amount AS log_amount,
-                l.date AS "log_date: NaiveDate", l.note AS log_note
-            FROM medications m LEFT JOIN log_entries l ON m.id = l.medication_id
-            WHERE m.user_id=? AND m.id=?
-            ORDER BY m.id, l.date, l.id"#, user_id, medication_id).fetch_all(pool).await?;
+        r#"
+        SELECT
+            m.id AS 'id!',
+            m.user_id,
+            m.name,
+            m.unit,
+            m.schedule_kind,
+            m.schedule_amount,
+            m.schedule_day_of_week,
+            m.warning_threshold,
+            m.snoozed,
+            l.id AS log_id, l.kind AS log_kind, l.amount AS log_amount,
+            l.date AS "log_date: NaiveDate", l.note AS log_note
+        FROM medications m LEFT JOIN log_entries l ON m.id = l.medication_id
+        WHERE m.user_id = ? AND m.id = ?
+        ORDER BY m.id, l.date, l.id
+        "#, user_id, medication_id).fetch_all(pool).await?;
     let count = rows.len();
     let mut rows = rows.into_iter().peekable();
 
@@ -231,7 +253,18 @@ pub async fn create_medication(
 
     let mut tx = state.pool.begin().await?;
     sqlx::query!(
-        "INSERT INTO medications (id, user_id, name, unit, schedule_kind, schedule_amount, schedule_day_of_week, warning_threshold) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        r"
+        INSERT INTO medications (
+            id,
+            user_id,
+            name,
+            unit,
+            schedule_kind,
+            schedule_amount,
+            schedule_day_of_week,
+            warning_threshold
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ",
         id_str,
         user_id,
         body.name,
@@ -244,7 +277,11 @@ pub async fn create_medication(
     .execute(&mut *tx)
     .await?;
     let log_id = Uuid::now_v7().to_string();
-    sqlx::query!("INSERT INTO log_entries (id, medication_id, kind, amount, date, note) VALUES (?, ?, ?, ?, ?, ?)", log_id, id_str, "baseline", body.initial_stock, at, Some("Initial baseline")).execute(&mut *tx).await?;
+    sqlx::query!(r"
+    INSERT INTO log_entries (id, medication_id, kind, amount, date, note) VALUES (
+        ?, ?, ?, ?, ?, ?
+    )
+    ", log_id, id_str, "baseline", body.initial_stock, at, Some("Initial baseline")).execute(&mut *tx).await?;
     tx.commit().await?;
 
     let medication = get_medication_with_logs(&state.pool, &id_str, &user_id).await?;
@@ -287,7 +324,7 @@ pub async fn delete_medication(
     let id = id.to_string();
 
     let result = sqlx::query!(
-        "DELETE FROM medications WHERE id=? AND user_id=?",
+        "DELETE FROM medications WHERE id = ? AND user_id = ?",
         id,
         user_id
     )
@@ -309,9 +346,20 @@ pub async fn update_medication(
     let id = id.to_string();
     if let Some(mut medication) = sqlx::query_as!(
         DbMedication,
-        r#"SELECT id as 'id!', user_id, name, unit, schedule_kind, schedule_amount, schedule_day_of_week, warning_threshold, snoozed
-            FROM medications
-            WHERE id=? AND user_id=?"#,
+        r"
+        SELECT
+            id AS 'id!',
+            user_id,
+            name,
+            unit,
+            schedule_kind,
+            schedule_amount,
+            schedule_day_of_week,
+            warning_threshold,
+            snoozed
+        FROM medications
+        WHERE id = ? AND user_id = ?
+        ",
         id,
         user_id
     )
@@ -351,7 +399,15 @@ pub async fn update_medication(
             medication.warning_threshold = warning_threshold as i64;
         }
         sqlx::query!(
-            "UPDATE medications SET name=?, unit=?, schedule_kind=?, schedule_amount=?, schedule_day_of_week=?, warning_threshold=?, snoozed=? WHERE id=? AND user_id=?",
+            r"
+            UPDATE medications SET name = ?,
+            unit = ?,
+            schedule_kind = ?,
+            schedule_amount = ?,
+            schedule_day_of_week = ?,
+            warning_threshold = ?,
+            snoozed = ? WHERE id = ? AND user_id = ?
+            ",
             medication.name,
             medication.unit,
             medication.schedule_kind,
@@ -385,7 +441,7 @@ pub async fn patch_snooze(
 ) -> Result<Json<MedicationWithStats>, AppError> {
     let id = id.to_string();
     let result = sqlx::query!(
-        "UPDATE medications SET snoozed=? WHERE id=? AND user_id=?",
+        "UPDATE medications SET snoozed = ? WHERE id = ? AND user_id = ?",
         body.snoozed,
         id,
         user_id
@@ -416,7 +472,7 @@ pub async fn create_log_entry(
 ) -> Result<Json<MedicationWithStats>, AppError> {
     let med_id = id.to_string();
     let result = sqlx::query!(
-        r#"SELECT COUNT(*) AS count FROM medications WHERE id=? AND user_id=?"#,
+        "SELECT COUNT(*) AS count FROM medications WHERE id = ? AND user_id = ?",
         med_id,
         user_id
     )
@@ -434,7 +490,11 @@ pub async fn create_log_entry(
 
     let mut tx = state.pool.begin().await?;
     sqlx::query!(
-        r"INSERT INTO log_entries (id, medication_id, kind, amount, date, note) VALUES (?, ?, ?, ?, ?, ?)",
+        r"
+        INSERT INTO log_entries (id, medication_id, kind, amount, date, note) VALUES (
+            ?, ?, ?, ?, ?, ?
+        )
+        ",
         log_id,
         med_id,
         kind,
@@ -443,7 +503,7 @@ pub async fn create_log_entry(
         note
     ).execute(&mut *tx).await?;
 
-    sqlx::query!(r#"UPDATE medications SET snoozed=FALSE WHERE id=?"#, med_id)
+    sqlx::query!("UPDATE medications SET snoozed = FALSE WHERE id = ?", med_id)
         .execute(&mut *tx)
         .await?;
 

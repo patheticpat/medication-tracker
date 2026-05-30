@@ -6,7 +6,7 @@ use web_push::{SubscriptionInfo, WebPushClient, WebPushMessageBuilder};
 use crate::{AppState, handlers::medications::get_all_medications_with_logs};
 
 pub async fn run(state: &AppState) -> Result<(), Box<dyn Error>> {
-    let timezones = sqlx::query!(r#"SELECT DISTINCT timezone FROM user_notification_settings;"#)
+    let timezones = sqlx::query!("SELECT DISTINCT timezone FROM user_notification_settings;")
         .fetch_all(&state.pool)
         .await?;
 
@@ -17,11 +17,15 @@ pub async fn run(state: &AppState) -> Result<(), Box<dyn Error>> {
 
         // Load all users that are due at the current time _and_ have at least one active push_subscription
         let user_rows = sqlx::query!(
-            r#"SELECT DISTINCT s.user_id AS 'user_id!'
-               FROM user_notification_settings s
-               JOIN push_subscriptions p
-               ON s.user_id = p.user_id
-               WHERE timezone=? AND notification_hour=? AND notification_days LIKE '%' || ? || '%';"#,
+            r"
+            SELECT DISTINCT s.user_id AS 'user_id!'
+            FROM user_notification_settings s
+            JOIN push_subscriptions p
+                ON s.user_id = p.user_id
+            WHERE
+                timezone
+            = ? AND notification_hour = ? AND notification_days LIKE '%' || ? || '%' ;
+            ",
             row.timezone,
             hour,
             day,
@@ -48,7 +52,7 @@ pub async fn notify_user(
         .count();
     if count > 0 {
         let subscriptions = sqlx::query!(
-            r#"SELECT endpoint, p256dh, auth FROM push_subscriptions WHERE user_id=?"#,
+            "SELECT endpoint, p256dh, auth FROM push_subscriptions WHERE user_id = ?",
             user_id
         )
         .fetch_all(&state.pool)

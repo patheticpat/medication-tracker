@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "\n        INSERT OR REPLACE INTO passkey_challenges (\n            user_id, challenge, timestamp\n        ) VALUES (?, ?, unixepoch ('now'))\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "b2e64051cc09d861d9adf51da979892e6eb802cd93865ba009cf916e73b95345"
+}

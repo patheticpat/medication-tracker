@@ -1,0 +1,32 @@
+{
+  "db_name": "SQLite",
+  "query": "\n        SELECT credential_id AS \"credential_id!\", added_at, last_used_at\n        FROM credentials\n        WHERE user_id\n        = ?\n        ",
+  "describe": {
+    "columns": [
+      {
+        "name": "credential_id!",
+        "ordinal": 0,
+        "type_info": "Text"
+      },
+      {
+        "name": "added_at",
+        "ordinal": 1,
+        "type_info": "Integer"
+      },
+      {
+        "name": "last_used_at",
+        "ordinal": 2,
+        "type_info": "Integer"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      true,
+      false,
+      true
+    ]
+  },
+  "hash": "f2b734142d51f6717450be2abf3e239cbb1a5c75fd3028ceffc37fd55132dd17"
+}

@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "\n        INSERT OR IGNORE INTO push_subscriptions (\n            id, user_id, endpoint, p256dh, auth, created_at\n        ) VALUES (?, ?, ?, ?, ?, ?);\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 6
+    },
+    "nullable": []
+  },
+  "hash": "7b15c070ae513b96f3e62b9606bc27a9695ed7dbe922daedcc1cff7ab8d7fa56"
+}

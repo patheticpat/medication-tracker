@@ -1,0 +1,26 @@
+{
+  "db_name": "SQLite",
+  "query": "\n        SELECT notification_hour, notification_days\n        FROM user_notification_settings\n        WHERE user_id\n        = ? ;\n        ",
+  "describe": {
+    "columns": [
+      {
+        "name": "notification_hour",
+        "ordinal": 0,
+        "type_info": "Integer"
+      },
+      {
+        "name": "notification_days",
+        "ordinal": 1,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "0aa25d1ff102f53850352e41119bf246a8ad9102b0715c21a019876f32cc8b3c"
+}

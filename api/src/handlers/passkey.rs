@@ -23,7 +23,12 @@ pub async fn register_begin(
 ) -> Result<Json<CreationChallengeResponse>, AppError> {
     // 0. Alte Challenges aufräumen
     sqlx::query!(
-        r#"DELETE FROM passkey_challenges WHERE timestamp < unixepoch('now', '-300 seconds');"#
+        r"
+        DELETE
+        FROM passkey_challenges
+        WHERE timestamp < unixepoch('now', '-300 seconds')
+        ;
+        "
     )
     .execute(&state.pool)
     .await?;
@@ -31,7 +36,13 @@ pub async fn register_begin(
     // 1. User aus DB laden
     // 2. Bestehende Credentials des Users laden (damit der Browser sie ausschließen kann)
     let credentials = sqlx::query!(
-        r#"SELECT users.*, credentials.credential_id FROM users LEFT JOIN credentials ON users.id=credentials.user_id WHERE users.id=?"#,
+        r"
+        SELECT users.*, credentials.credential_id
+        FROM users
+        LEFT JOIN credentials ON users.id = credentials.user_id
+        WHERE users.id
+        = ?
+        ",
         user_id
     ).fetch_all(&state.pool).await?;
     let user_unique_id = uuid::Uuid::parse_str(&user_id).expect("invalid user id format");
@@ -59,7 +70,11 @@ pub async fn register_begin(
     // 4. Challenge in DB speichern
     let skr = serde_json::to_string(&skr).map_err(|_| AppError::InternalError)?;
     sqlx::query!(
-        r#"INSERT OR REPLACE INTO passkey_challenges (user_id, challenge, timestamp) VALUES(?, ?, unixepoch('now'))"#,
+        r"
+        INSERT OR REPLACE INTO passkey_challenges (
+            user_id, challenge, timestamp
+        ) VALUES (?, ?, unixepoch ('now'))
+        ",
         user_id,
         skr
     )
@@ -77,13 +92,18 @@ pub async fn register_complete(
 ) -> Result<StatusCode, AppError> {
     // 1. Challenge aus DB laden und löschen
     let challenge = sqlx::query!(
-        r#"SELECT * FROM passkey_challenges WHERE user_id=? AND (unixepoch() - timestamp) < 300;"#,
+        r"
+        SELECT *
+        FROM passkey_challenges
+        WHERE user_id
+        = ? AND (unixepoch () - timestamp) < 300 ;
+        ",
         user_id
     )
     .fetch_optional(&state.pool)
     .await?
     .ok_or(AppError::NotFound)?;
-    sqlx::query!(r#"DELETE FROM passkey_challenges WHERE user_id=?"#, user_id)
+    sqlx::query!("DELETE FROM passkey_challenges WHERE user_id = ?", user_id)
         .execute(&state.pool)
         .await?;
     let skr = serde_json::from_str(&challenge.challenge).map_err(|_| AppError::InternalError)?;
@@ -99,7 +119,11 @@ pub async fn register_complete(
     let serialized_passkey =
         serde_json::to_string(&passkey).map_err(|_| AppError::InternalError)?;
 
-    sqlx::query!(r#"INSERT INTO credentials (credential_id, user_id, passkey, added_at) VALUES (?, ?, ?, unixepoch());"#, credential_id, user_id, serialized_passkey).execute(&state.pool).await?;
+    sqlx::query!(r"
+    INSERT INTO credentials (credential_id, user_id, passkey, added_at) VALUES (
+        ?, ?, ?, unixepoch ()
+    );
+    ", credential_id, user_id, serialized_passkey).execute(&state.pool).await?;
     Ok(StatusCode::NO_CONTENT)
 }
 
@@ -109,7 +133,12 @@ pub async fn login_begin(
 ) -> Result<Json<RequestChallengeResponse>, AppError> {
     // 0. Alte Challenges aufräumen
     sqlx::query!(
-        r#"DELETE FROM passkey_challenges WHERE timestamp < unixepoch('now', '-300 seconds');"#
+        r"
+        DELETE
+        FROM passkey_challenges
+        WHERE timestamp < unixepoch('now', '-300 seconds')
+        ;
+        "
     )
     .execute(&state.pool)
     .await?;
@@ -117,7 +146,13 @@ pub async fn login_begin(
     // 1. User aus DB laden
     // 2. Credentials des Users laden
     let credentials = sqlx::query!(
-        r#"SELECT users.id as "id!", credentials.passkey FROM users JOIN credentials ON users.id=credentials.user_id WHERE users.username=?"#,
+        r#"
+        SELECT users.id AS "id!", credentials.passkey
+        FROM users
+        JOIN credentials ON users.id = credentials.user_id
+        WHERE users.username
+        = ?
+        "#,
         body.username
     ).fetch_all(&state.pool).await?;
 
@@ -142,7 +177,11 @@ pub async fn login_begin(
     let user_id = &credentials.first().expect("credentials is not empty").id;
     let challenge = serde_json::to_string(&pka).map_err(|_| AppError::InternalError)?;
     sqlx::query!(
-        r#"INSERT OR REPLACE INTO passkey_challenges (user_id, challenge, timestamp) VALUES(?, ?, unixepoch('now'))"#,
+        r"
+        INSERT OR REPLACE INTO passkey_challenges (
+            user_id, challenge, timestamp
+        ) VALUES (?, ?, unixepoch ('now'))
+        ",
         user_id,
         challenge
     )
@@ -160,7 +199,13 @@ pub async fn login_complete(
     // Aber: woher wissen wir hier welcher User sich anmeldet?
     let credential_id = BASE64_URL_SAFE_NO_PAD.encode(body.raw_id.as_ref());
     let row = sqlx::query!(
-        r#"SELECT users.id AS "id!", credentials.passkey FROM users JOIN credentials ON users.id=credentials.user_id WHERE credential_id = ?"#,
+        r#"
+        SELECT users.id AS "id!", credentials.passkey
+        FROM users
+        JOIN credentials ON users.id = credentials.user_id
+        WHERE credential_id
+        = ?
+        "#,
         credential_id
     )
     .fetch_optional(&state.pool)
@@ -172,7 +217,12 @@ pub async fn login_complete(
         serde_json::from_str(&row.passkey).map_err(|_| AppError::InternalError)?;
 
     let challenge = sqlx::query!(
-        r#"SELECT * FROM passkey_challenges WHERE user_id=? AND (unixepoch() - timestamp) < 300;"#,
+        r"
+        SELECT *
+        FROM passkey_challenges
+        WHERE user_id
+        = ? AND (unixepoch () - timestamp) < 300 ;
+        ",
         user_id
     )
     .fetch_optional(&state.pool)
@@ -180,7 +230,7 @@ pub async fn login_complete(
     .ok_or(AppError::NotFound)?;
 
     sqlx::query!(
-        r#"DELETE FROM passkey_challenges WHERE user_id=?;"#,
+        "DELETE FROM passkey_challenges WHERE user_id = ? ;",
         user_id
     )
     .execute(&state.pool)
@@ -212,7 +262,10 @@ pub async fn login_complete(
         let serialized_passkey =
             serde_json::to_string(&passkey).map_err(|_| AppError::InternalError)?;
         sqlx::query!(
-            r#"UPDATE credentials SET passkey=?, last_used_at=unixepoch() WHERE credential_id=?"#,
+            r"
+            UPDATE credentials SET passkey = ?,
+            last_used_at = unixepoch () WHERE credential_id = ?
+            ",
             serialized_passkey,
             credential_id
         )
@@ -220,7 +273,7 @@ pub async fn login_complete(
         .await?;
     } else {
         sqlx::query!(
-            r#"UPDATE credentials SET last_used_at=unixepoch() WHERE credential_id=?"#,
+            "UPDATE credentials SET last_used_at = unixepoch() WHERE credential_id = ?",
             credential_id
         )
         .execute(&state.pool)
@@ -238,7 +291,12 @@ pub async fn list_passkeys(
 ) -> Result<Json<Vec<PasskeyInfo>>, AppError> {
     let passkeys = sqlx::query_as!(
         PasskeyInfo,
-        r#"SELECT credential_id AS "credential_id!", added_at, last_used_at FROM credentials WHERE user_id=?"#,
+        r#"
+        SELECT credential_id AS "credential_id!", added_at, last_used_at
+        FROM credentials
+        WHERE user_id
+        = ?
+        "#,
         user_id
     )
     .fetch_all(&state.pool)
@@ -252,7 +310,7 @@ pub async fn delete_passkey(
     Path(credential_id): Path<String>,
 ) -> Result<StatusCode, AppError> {
     let r = sqlx::query!(
-        r#"DELETE FROM credentials WHERE credential_id=? and user_id=?"#,
+        "DELETE FROM credentials WHERE credential_id = ? and user_id = ?",
         credential_id,
         user_id
     )

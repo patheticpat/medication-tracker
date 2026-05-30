@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "\n        INSERT OR REPLACE INTO user_notification_settings (\n            user_id, timezone, notification_hour, notification_days\n        ) VALUES (?, ?, ?, ?);\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 4
+    },
+    "nullable": []
+  },
+  "hash": "ed1535f08417c64ad4021830fb5fc29fb6b6a9910004f07b4b308af2660cd133"
+}
