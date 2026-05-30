@@ -1,7 +1,7 @@
 use axum::{Json, extract::State, http::StatusCode};
 use base64::{Engine, prelude::BASE64_URL_SAFE_NO_PAD};
 use uuid::Uuid;
-use web_push::{SubscriptionInfo, URL_SAFE_NO_PAD, VapidSignatureBuilder};
+use web_push::SubscriptionInfo;
 
 use crate::{
     AppState,
@@ -16,10 +16,7 @@ use crate::{
 };
 
 pub async fn get_vapid_public_key(State(state): State<AppState>) -> Json<VapidPublicKeyResponse> {
-    let builder =
-        VapidSignatureBuilder::from_base64_no_sub(&state.vapid_private_key, URL_SAFE_NO_PAD)
-            .unwrap();
-    let public_key = builder.get_public_key();
+    let public_key = state.vapid_signature_builder.get_public_key();
     Json(VapidPublicKeyResponse {
         public_key: BASE64_URL_SAFE_NO_PAD.encode(&public_key),
     })
@@ -109,7 +106,6 @@ pub async fn test_push(
     AuthUser(user_id): AuthUser,
     Json(body): Json<TestPushRequest>,
 ) -> Result<StatusCode, AppError> {
-    let client = web_push::IsahcWebPushClient::new().map_err(|_| AppError::InternalError)?;
     let subscription = sqlx::query!(
         r#"SELECT endpoint, p256dh, auth FROM push_subscriptions WHERE user_id=? AND endpoint=?;"#,
         user_id,
@@ -128,7 +124,7 @@ pub async fn test_push(
         subscription.p256dh,
         subscription.auth,
     );
-    if let Err(e) = send_notification(&state, &client, &subscription_info, body.as_bytes()).await {
+    if let Err(e) = send_notification(&state, &subscription_info, body.as_bytes()).await {
         eprintln!("send_notification error: {e:?}");
         Err(AppError::InternalError)
     } else {

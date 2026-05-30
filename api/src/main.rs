@@ -36,6 +36,9 @@ use sqlx::{SqlitePool, sqlite::SqliteConnectOptions};
 use std::{env, str::FromStr, sync::Arc};
 use tokio_cron_scheduler::{Job, JobScheduler};
 use tower_http::cors::{Any, CorsLayer};
+use web_push::{
+    IsahcWebPushClient, PartialVapidSignatureBuilder, URL_SAFE_NO_PAD, VapidSignatureBuilder,
+};
 use webauthn_rs::{Webauthn, WebauthnBuilder, prelude::Url};
 
 const DATABASE_URL: &str = "DATABASE_URL";
@@ -49,8 +52,9 @@ pub struct AppState {
     pub pool: SqlitePool,
     pub jwt_secret: String,
     pub webauthn: Arc<Webauthn>,
-    pub vapid_private_key: String,
     pub vapid_subject: String,
+    pub vapid_signature_builder: PartialVapidSignatureBuilder,
+    pub push_client: IsahcWebPushClient,
 }
 
 #[tokio::main]
@@ -79,12 +83,15 @@ async fn main() -> Result<()> {
     let vapid_private_key = env::var("VAPID_PRIVATE_KEY")?;
     let vapid_subject = env::var("VAPID_SUBJECT")?;
 
+    let vapid_signature_builder =
+        VapidSignatureBuilder::from_base64_no_sub(&vapid_private_key, URL_SAFE_NO_PAD).unwrap();
     let state = AppState {
         pool,
         jwt_secret,
         webauthn: Arc::new(webauthn),
-        vapid_private_key,
+        vapid_signature_builder,
         vapid_subject,
+        push_client: IsahcWebPushClient::new()?,
     };
 
     let scheduler = JobScheduler::new().await?;
