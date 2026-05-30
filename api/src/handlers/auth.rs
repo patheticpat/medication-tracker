@@ -14,10 +14,20 @@ use crate::{
     models::{AuthResponse, RegisterRequest},
 };
 
+// Same params as Argon2::default() so timing matches a real verify when the user doesn't exist.
+const DUMMY_HASH: &str = "$argon2id$v=19$m=19456,t=2,p=1$AAAAAAAAAAAAAAAAAAAAAA$AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+
 pub async fn register(
     State(state): State<AppState>,
     Json(body): Json<RegisterRequest>,
 ) -> Result<Json<AuthResponse>, AppError> {
+    // 0. Länge für Passwort validieren
+    let length = body.password.chars().count();
+    if !(5..=128).contains(&length) {
+        return Err(AppError::BadRequest(String::from(
+            "Password must be between 5 and 128 characters",
+        )));
+    }
     // 1. Passwort hashen mit argon2
     let salt = SaltString::generate(&mut OsRng);
     let argon2 = Argon2::default();
@@ -54,20 +64,31 @@ pub async fn login(
     State(state): State<AppState>,
     Json(body): Json<LoginRequest>,
 ) -> Result<Json<AuthResponse>, AppError> {
-    if let Some(user) = sqlx::query!(r#"SELECT * FROM users WHERE username=?"#, body.username)
-        .fetch_optional(&state.pool)
-        .await?
-    {
-        let parsed_hash =
-            PasswordHash::new(&user.password_hash).map_err(|_| AppError::InternalError)?;
+    if body.password.chars().count() > 128 {
+        return Err(AppError::BadRequest(String::from("password too long")));
+    }
 
-        Argon2::default()
-            .verify_password(body.password.as_bytes(), &parsed_hash)
-            .map_err(|_| AppError::Unauthorized)?;
-        let token = create_jwt(user.id.as_ref().unwrap(), &state.jwt_secret)?;
-        Ok(Json(AuthResponse { token }))
-    } else {
-        Err(AppError::Unauthorized)
+    let user = sqlx::query!(
+        r#"SELECT id AS "id!", password_hash FROM users WHERE username=?"#,
+        body.username
+    )
+    .fetch_optional(&state.pool)
+    .await?;
+
+    let hash_str = user
+        .as_ref()
+        .map_or(DUMMY_HASH, |u| u.password_hash.as_str());
+    let parsed_hash = PasswordHash::new(hash_str).map_err(|_| AppError::InternalError)?;
+    let verified = Argon2::default()
+        .verify_password(body.password.as_bytes(), &parsed_hash)
+        .is_ok();
+
+    match user {
+        Some(u) if verified => {
+            let token = create_jwt(u.id.as_ref(), &state.jwt_secret)?;
+            Ok(Json(AuthResponse { token }))
+        }
+        _ => Err(AppError::Unauthorized),
     }
 }
 
@@ -76,6 +97,9 @@ pub async fn change_password(
     AuthUser(user_id): AuthUser,
     Json(body): Json<ChangePasswordRequest>,
 ) -> Result<StatusCode, AppError> {
+    if body.current_password.chars().count() > 128 {
+        return Err(AppError::BadRequest(String::from("password too long")));
+    }
     // 1. User aus DB laden (SELECT password_hash FROM users WHERE id=?)
     let row = sqlx::query!(r#"SELECT password_hash FROM users WHERE id=?"#, user_id)
         .fetch_one(&state.pool)
@@ -86,6 +110,14 @@ pub async fn change_password(
     Argon2::default()
         .verify_password(body.current_password.as_bytes(), &parsed_hash)
         .map_err(|_| AppError::BadRequest(String::from("wrong current password")))?;
+
+    // 2.5. Länge für Passwort validieren
+    let length = body.new_password.chars().count();
+    if !(5..=128).contains(&length) {
+        return Err(AppError::BadRequest(String::from(
+            "Password must be between 5 and 128 characters",
+        )));
+    }
 
     // 3. Neues Passwort hashen
     let salt = SaltString::generate(&mut OsRng);
@@ -110,4 +142,17 @@ pub async fn change_password(
 
     // 5. Ok(StatusCode::NO_CONTENT)
     Ok(StatusCode::NO_CONTENT)
+}
+// in auth.rs
+
+#[cfg(test)]
+mod tests {
+    use argon2::PasswordHash;
+
+    use crate::handlers::auth::DUMMY_HASH;
+
+    #[test]
+    fn dummy_hash_is_parseable() {
+        PasswordHash::new(DUMMY_HASH).expect("DUMMY_HASH must be a valid PHC string");
+    }
 }

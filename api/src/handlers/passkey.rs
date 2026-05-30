@@ -80,8 +80,9 @@ pub async fn register_complete(
         r#"SELECT * FROM passkey_challenges WHERE user_id=? AND (unixepoch() - timestamp) < 300;"#,
         user_id
     )
-    .fetch_one(&state.pool)
-    .await?;
+    .fetch_optional(&state.pool)
+    .await?
+    .ok_or(AppError::NotFound)?;
     sqlx::query!(r#"DELETE FROM passkey_challenges WHERE user_id=?"#, user_id)
         .execute(&state.pool)
         .await?;
@@ -174,9 +175,9 @@ pub async fn login_complete(
         r#"SELECT * FROM passkey_challenges WHERE user_id=? AND (unixepoch() - timestamp) < 300;"#,
         user_id
     )
-    .fetch_one(&state.pool)
-    .await
-    .map_err(|_| AppError::NotFound)?;
+    .fetch_optional(&state.pool)
+    .await?
+    .ok_or(AppError::NotFound)?;
 
     sqlx::query!(
         r#"DELETE FROM passkey_challenges WHERE user_id=?;"#,

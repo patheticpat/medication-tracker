@@ -73,6 +73,19 @@ pub async fn update_settings(
     Json(body): Json<NotificationSettingsRequest>,
 ) -> Result<StatusCode, AppError> {
     let timezone = tz.name();
+
+    if body.notification_hour < 0 || body.notification_hour > 23 {
+        return Err(AppError::BadRequest(String::from(
+            "Invalid notificationHour",
+        )));
+    }
+
+    if !days_string_valid(&body.notification_days) {
+        return Err(AppError::BadRequest(String::from(
+            "Invalid notificationDays",
+        )));
+    }
+
     sqlx::query!(
         r#"INSERT OR REPLACE INTO user_notification_settings (user_id, timezone, notification_hour, notification_days) VALUES (?, ?, ?, ?);"#,
         user_id,
@@ -111,8 +124,9 @@ pub async fn test_push(
         user_id,
         body.endpoint,
     )
-    .fetch_one(&state.pool)
-    .await?;
+    .fetch_optional(&state.pool)
+    .await?
+    .ok_or(AppError::NotFound)?;
     let body = serde_json::json!({
         "title": "Medication Tracker",
         "body": "This is a test notification",
@@ -129,5 +143,32 @@ pub async fn test_push(
         Err(AppError::InternalError)
     } else {
         Ok(StatusCode::NO_CONTENT)
+    }
+}
+
+fn days_string_valid(days: &str) -> bool {
+    days.is_empty()
+        || days
+            .split(',')
+            .all(|s| s.parse::<u8>().is_ok_and(|n| n < 7))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_days_string_valid() {
+        assert!(days_string_valid(""));
+        assert!(days_string_valid("1"));
+        assert!(days_string_valid("5,3,2"));
+        assert!(days_string_valid("0,1,2,3,4,5,6"));
+
+        assert!(!days_string_valid(","));
+        assert!(!days_string_valid("1,b"));
+        assert!(!days_string_valid("1,2,"));
+        assert!(!days_string_valid(",1,2"));
+        assert!(!days_string_valid("1,2,3,4,5,6,7"));
+        assert!(!days_string_valid("just plain invalid"));
     }
 }

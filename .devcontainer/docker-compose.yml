@@ -3,8 +3,6 @@ services:
     image: mcr.microsoft.com/devcontainers/base:ubuntu-24.04
     volumes:
       - ../:/workspace:cached
-      - cargo-target:/workspace/api/target
-      - cargo-registry:/usr/local/cargo/registry
     command: sleep infinity
     user: root
     ports:
@@ -15,7 +13,3 @@ services:
       - JWT_SECRET=dev-secret-change-me
       - RP_ID=localhost
       - RP_ORIGIN=http://localhost:5173
-
-volumes:
-  cargo-target:
-  cargo-registry:

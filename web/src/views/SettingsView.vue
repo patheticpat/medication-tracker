@@ -233,7 +233,12 @@ const shortId = (id: string) => id.slice(0, 8) + '…'
       </div>
       <button
         @click="handleChangePassword"
-        :disabled="newPassword !== confirmPassword || !currentPassword || !newPassword"
+        :disabled="
+          newPassword !== confirmPassword ||
+          !currentPassword ||
+          !newPassword ||
+          newPassword.length < 5
+        "
         class="mt-3 text-sm text-white bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       >
         Update password

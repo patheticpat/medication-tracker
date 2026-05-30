@@ -286,11 +286,11 @@ impl Medication {
         let stock = self.calculate_stock(at);
 
         match self.schedule {
-            Schedule::Daily { amount } => (stock / amount).floor() as u64,
+            Schedule::Daily { amount } if amount > 0.0 => (stock / amount).floor() as u64,
             Schedule::Weekly {
                 day_of_week,
                 amount,
-            } => {
+            } if amount > 0.0 => {
                 let doses_left = (stock / amount).floor() as u64;
                 if doses_left > 0 {
                     let at_weekday = at.weekday().num_days_from_sunday() as u8;
@@ -304,6 +304,7 @@ impl Medication {
                     0
                 }
             }
+            _ => 0,
         }
     }
 }

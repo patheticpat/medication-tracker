@@ -30,4 +30,3 @@ webauthn-rs = { version = "0.5.4", features = [
 ] }
 web-push = "0.10"
 tokio-cron-scheduler = "0.13"
-openssl = { version = "0.10", features = ["vendored"] }

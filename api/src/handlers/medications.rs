@@ -227,6 +227,12 @@ pub async fn create_medication(
         } => ("weekly", amount, Some(day_of_week)),
     };
 
+    if amount <= 0. {
+        return Err(AppError::BadRequest(String::from(
+            "Schedule must have a strictly positive amount",
+        )));
+    }
+
     let mut tx = state.pool.begin().await?;
     sqlx::query!(
         "INSERT INTO medications (id, user_id, name, unit, schedule_kind, schedule_amount, schedule_day_of_week, warning_threshold) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
@@ -328,6 +334,12 @@ pub async fn update_medication(
                     amount,
                 } => (String::from("weekly"), amount, Some(day_of_week as i64)),
             };
+
+            if amount <= 0. {
+                return Err(AppError::BadRequest(String::from(
+                    "Schedule must have a strictly positive amount",
+                )));
+            }
             medication.schedule_kind = kind;
             medication.schedule_amount = amount;
             medication.schedule_day_of_week = day;
