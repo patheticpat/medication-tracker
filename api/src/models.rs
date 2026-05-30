@@ -52,7 +52,7 @@ pub struct PatchSnooze {
 
 #[derive(Debug)]
 pub struct DbMedicationWithLogRow {
-    pub id: Option<String>,
+    pub id: String,
     pub user_id: String,
     pub name: String,
     pub unit: String,
@@ -70,7 +70,7 @@ pub struct DbMedicationWithLogRow {
 
 #[derive(Debug)]
 pub struct DbMedication {
-    pub id: Option<String>,
+    pub id: String,
     pub user_id: String,
     pub name: String,
     pub unit: String,
@@ -86,7 +86,7 @@ impl TryFrom<DbMedication> for Medication {
 
     fn try_from(value: DbMedication) -> Result<Self, Self::Error> {
         Ok(Medication {
-            id: Uuid::parse_str(&value.id.unwrap())?,
+            id: Uuid::parse_str(&value.id)?,
             name: value.name,
             unit: value.unit,
             schedule: match value.schedule_kind.as_ref() {

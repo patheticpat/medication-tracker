@@ -32,7 +32,7 @@ pub async fn get_all_medications_with_logs(
     user_id: &str,
 ) -> Result<Vec<Medication>, AppError> {
     let rows = sqlx::query_as!(DbMedicationWithLogRow,
-        r#" SELECT m.id, m.user_id, m.name, m.unit, m.schedule_kind, m.schedule_amount, m.schedule_day_of_week, m.warning_threshold, m.snoozed,
+        r#"SELECT m.id AS 'id!', m.user_id, m.name, m.unit, m.schedule_kind, m.schedule_amount, m.schedule_day_of_week, m.warning_threshold, m.snoozed,
                 l.id AS log_id, l.kind AS log_kind, l.amount AS log_amount,
                 l.date AS "log_date: NaiveDate", l.note AS log_note
             FROM medications m LEFT JOIN log_entries l ON m.id = l.medication_id
@@ -43,12 +43,10 @@ pub async fn get_all_medications_with_logs(
     let mut current_id = String::new();
 
     for row in rows {
-        let id = row.id.ok_or_eyre("missing id")?;
-
-        if id != current_id {
-            current_id = id.clone();
+        if row.id != current_id {
+            current_id = row.id.clone();
             let medication = Medication {
-                id: Uuid::parse_str(&id).map_err(|_| AppError::InternalError)?,
+                id: Uuid::parse_str(&row.id).map_err(|_| AppError::InternalError)?,
                 name: row.name,
                 unit: row.unit,
                 schedule: match row.schedule_kind.as_str() {
@@ -114,7 +112,7 @@ async fn get_medication_with_logs(
     user_id: &str,
 ) -> Result<Medication, AppError> {
     let rows = sqlx::query_as!(DbMedicationWithLogRow,
-        r#" SELECT m.id, m.user_id, m.name, m.unit, m.schedule_kind, m.schedule_amount, m.schedule_day_of_week, m.warning_threshold, m.snoozed,
+        r#"SELECT m.id AS 'id!', m.user_id, m.name, m.unit, m.schedule_kind, m.schedule_amount, m.schedule_day_of_week, m.warning_threshold, m.snoozed,
                 l.id AS log_id, l.kind AS log_kind, l.amount AS log_amount,
                 l.date AS "log_date: NaiveDate", l.note AS log_note
             FROM medications m LEFT JOIN log_entries l ON m.id = l.medication_id
@@ -124,10 +122,8 @@ async fn get_medication_with_logs(
     let mut rows = rows.into_iter().peekable();
 
     let medication = if let Some(row) = rows.peek() {
-        let id = row.id.clone().ok_or_eyre("missing id")?;
-
         Medication {
-            id: Uuid::parse_str(&id).map_err(|_| AppError::InternalError)?,
+            id: Uuid::parse_str(&row.id).map_err(|_| AppError::InternalError)?,
             name: row.name.clone(),
             unit: row.unit.clone(),
             schedule: match row.schedule_kind.as_str() {
@@ -313,7 +309,9 @@ pub async fn update_medication(
     let id = id.to_string();
     if let Some(mut medication) = sqlx::query_as!(
         DbMedication,
-        "SELECT * FROM medications WHERE id=? AND user_id=?",
+        r#"SELECT id as 'id!', user_id, name, unit, schedule_kind, schedule_amount, schedule_day_of_week, warning_threshold, snoozed
+            FROM medications
+            WHERE id=? AND user_id=?"#,
         id,
         user_id
     )
@@ -365,7 +363,7 @@ pub async fn update_medication(
             user_id
         ).execute(&state.pool).await?;
         let medication =
-            get_medication_with_logs(&state.pool, medication.id.as_ref().unwrap(), &user_id)
+            get_medication_with_logs(&state.pool, &medication.id, &user_id)
                 .await?;
         let stock = medication.calculate_stock(&at);
         let days_remaining = medication.calculate_days_remaining(&at);

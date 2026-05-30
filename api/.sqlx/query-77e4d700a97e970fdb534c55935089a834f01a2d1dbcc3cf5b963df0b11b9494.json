@@ -1,10 +1,10 @@
 {
   "db_name": "SQLite",
-  "query": " SELECT m.id, m.user_id, m.name, m.unit, m.schedule_kind, m.schedule_amount, m.schedule_day_of_week, m.warning_threshold, m.snoozed,\n                l.id AS log_id, l.kind AS log_kind, l.amount AS log_amount,\n                l.date AS \"log_date: NaiveDate\", l.note AS log_note\n            FROM medications m LEFT JOIN log_entries l ON m.id = l.medication_id\n            WHERE m.user_id=?\n            ORDER BY m.id, l.date, l.id",
+  "query": "SELECT m.id AS 'id!', m.user_id, m.name, m.unit, m.schedule_kind, m.schedule_amount, m.schedule_day_of_week, m.warning_threshold, m.snoozed,\n                l.id AS log_id, l.kind AS log_kind, l.amount AS log_amount,\n                l.date AS \"log_date: NaiveDate\", l.note AS log_note\n            FROM medications m LEFT JOIN log_entries l ON m.id = l.medication_id\n            WHERE m.user_id=?\n            ORDER BY m.id, l.date, l.id",
   "describe": {
     "columns": [
       {
-        "name": "id",
+        "name": "id!",
         "ordinal": 0,
         "type_info": "Text"
       },
@@ -94,5 +94,5 @@
       true
     ]
   },
-  "hash": "0ec0fbecdbec8967030abd41953b4a7e2f3f0a90724f8312342e89b40dc3aad0"
+  "hash": "77e4d700a97e970fdb534c55935089a834f01a2d1dbcc3cf5b963df0b11b9494"
 }
