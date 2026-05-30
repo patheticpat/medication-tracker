@@ -39,7 +39,10 @@ watch(
   (settings) => {
     if (settings) {
       notificationHour.value = settings.notificationHour
-      notificationDays.value = settings.notificationDays.split(',').map(Number)
+      notificationDays.value =
+        settings.notificationDays.length == 0
+          ? []
+          : settings.notificationDays.split(',').map(Number)
     }
   },
   { immediate: true },
