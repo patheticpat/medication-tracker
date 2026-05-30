@@ -23,8 +23,10 @@ use crate::{
     },
     scheduler::run,
 };
-#[cfg(debug_assertions)]
-use axum::http::header::{AUTHORIZATION, CONTENT_TYPE, HeaderName};
+use axum::http::{
+    HeaderValue,
+    header::{AUTHORIZATION, CONTENT_TYPE, HeaderName},
+};
 use axum::{
     Router,
     routing::{delete, get, patch, post, put},
@@ -33,7 +35,6 @@ use color_eyre::Result;
 use sqlx::{SqlitePool, sqlite::SqliteConnectOptions};
 use std::{env, str::FromStr, sync::Arc};
 use tokio_cron_scheduler::{Job, JobScheduler};
-#[cfg(debug_assertions)]
 use tower_http::cors::{Any, CorsLayer};
 use webauthn_rs::{Webauthn, WebauthnBuilder, prelude::Url};
 
@@ -41,6 +42,7 @@ const DATABASE_URL: &str = "DATABASE_URL";
 const JWT_SECRET: &str = "JWT_SECRET";
 const RP_ID: &str = "RP_ID";
 const RP_ORIGIN: &str = "RP_ORIGIN";
+const CORS_ORIGIN: &str = "CORS_ORIGIN";
 
 #[derive(Clone)]
 pub struct AppState {
@@ -66,6 +68,7 @@ async fn main() -> Result<()> {
     sqlx::migrate!("./migrations").run(&pool).await?;
 
     let jwt_secret = env::var(JWT_SECRET)?;
+    let cors_origin = env::var(CORS_ORIGIN)?;
 
     let rp_id = env::var(RP_ID).unwrap_or_else(|_| "localhost".to_string());
     let rp_origin = env::var(RP_ORIGIN).unwrap_or_else(|_| "http://localhost:5173".to_string());
@@ -129,10 +132,9 @@ async fn main() -> Result<()> {
         .route("/push/test", post(test_push))
         .with_state(state);
 
-    #[cfg(debug_assertions)]
     let app = app.layer(
         CorsLayer::new()
-            .allow_origin(Any)
+            .allow_origin(cors_origin.parse::<HeaderValue>().unwrap())
             .allow_methods(Any)
             .allow_headers([
                 AUTHORIZATION,

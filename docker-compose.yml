@@ -30,6 +30,7 @@ services:
       - RP_ORIGIN=${RP_ORIGIN}
       - VAPID_SUBJECT=${VAPID_SUBJECT}
       - VAPID_PRIVATE_KEY=${VAPID_PRIVATE_KEY}
+      - CORS_ORIGIN=${CORS_ORIGIN}
       - DATABASE_URL=sqlite:/data/medications.db
     restart: unless-stopped
 
