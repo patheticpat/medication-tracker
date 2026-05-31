@@ -20,18 +20,12 @@ use crate::{
     },
 };
 
-pub async fn health() -> impl IntoResponse {
-    Json(serde_json::json!({
-        "status": "ok",
-        "version": env!("GIT_SHA")
-    }))
-}
-
 pub async fn get_all_medications_with_logs(
     pool: &SqlitePool,
     user_id: &str,
 ) -> Result<Vec<Medication>, AppError> {
-    let rows = sqlx::query_as!(DbMedicationWithLogRow,
+    let rows = sqlx::query_as!(
+        DbMedicationWithLogRow,
         r#"
         SELECT
             m.id AS 'id!',
@@ -48,7 +42,11 @@ pub async fn get_all_medications_with_logs(
         FROM medications m LEFT JOIN log_entries l ON m.id = l.medication_id
         WHERE m.user_id = ?
         ORDER BY m.id, l.date, l.id
-        "#, user_id).fetch_all(pool).await?;
+        "#,
+        user_id
+    )
+    .fetch_all(pool)
+    .await?;
 
     let mut medications: Vec<Medication> = Vec::new();
     let mut current_id = String::new();
@@ -122,7 +120,8 @@ async fn get_medication_with_logs(
     medication_id: &str,
     user_id: &str,
 ) -> Result<Medication, AppError> {
-    let rows = sqlx::query_as!(DbMedicationWithLogRow,
+    let rows = sqlx::query_as!(
+        DbMedicationWithLogRow,
         r#"
         SELECT
             m.id AS 'id!',
@@ -139,7 +138,12 @@ async fn get_medication_with_logs(
         FROM medications m LEFT JOIN log_entries l ON m.id = l.medication_id
         WHERE m.user_id = ? AND m.id = ?
         ORDER BY m.id, l.date, l.id
-        "#, user_id, medication_id).fetch_all(pool).await?;
+        "#,
+        user_id,
+        medication_id
+    )
+    .fetch_all(pool)
+    .await?;
     let count = rows.len();
     let mut rows = rows.into_iter().peekable();
 
@@ -277,11 +281,21 @@ pub async fn create_medication(
     .execute(&mut *tx)
     .await?;
     let log_id = Uuid::now_v7().to_string();
-    sqlx::query!(r"
+    sqlx::query!(
+        r"
     INSERT INTO log_entries (id, medication_id, kind, amount, date, note) VALUES (
         ?, ?, ?, ?, ?, ?
     )
-    ", log_id, id_str, "baseline", body.initial_stock, at, Some("Initial baseline")).execute(&mut *tx).await?;
+    ",
+        log_id,
+        id_str,
+        "baseline",
+        body.initial_stock,
+        at,
+        Some("Initial baseline")
+    )
+    .execute(&mut *tx)
+    .await?;
     tx.commit().await?;
 
     let medication = get_medication_with_logs(&state.pool, &id_str, &user_id).await?;
@@ -417,10 +431,10 @@ pub async fn update_medication(
             medication.snoozed,
             id,
             user_id
-        ).execute(&state.pool).await?;
-        let medication =
-            get_medication_with_logs(&state.pool, &medication.id, &user_id)
-                .await?;
+        )
+        .execute(&state.pool)
+        .await?;
+        let medication = get_medication_with_logs(&state.pool, &medication.id, &user_id).await?;
         let stock = medication.calculate_stock(&at);
         let days_remaining = medication.calculate_days_remaining(&at);
         Ok(Json(MedicationWithStats {
@@ -501,11 +515,16 @@ pub async fn create_log_entry(
         amount,
         today,
         note
-    ).execute(&mut *tx).await?;
+    )
+    .execute(&mut *tx)
+    .await?;
 
-    sqlx::query!("UPDATE medications SET snoozed = FALSE WHERE id = ?", med_id)
-        .execute(&mut *tx)
-        .await?;
+    sqlx::query!(
+        "UPDATE medications SET snoozed = FALSE WHERE id = ?",
+        med_id
+    )
+    .execute(&mut *tx)
+    .await?;
 
     tx.commit().await?;
 

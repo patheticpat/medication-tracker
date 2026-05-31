@@ -4,34 +4,35 @@ pub mod handlers;
 pub mod middleware;
 pub mod models;
 pub mod scheduler;
-pub mod utils;
 
 use crate::{
     handlers::{
-        auth::{change_password, login, register},
+        health::status,
         medications::{
-            create_log_entry, create_medication, delete_medication, health, list_medications,
+            create_log_entry, create_medication, delete_medication, list_medications,
             medication_details, patch_snooze, update_medication,
-        },
-        passkey::{
-            delete_passkey, list_passkeys, login_begin, login_complete, register_begin,
-            register_complete,
         },
         push::{
             get_settings, get_vapid_public_key, subscribe, test_push, unsubscribe, update_settings,
         },
     },
+    middleware::CustomClaims,
     scheduler::run,
-};
-use axum::http::{
-    HeaderValue,
-    header::{AUTHORIZATION, CONTENT_TYPE, HeaderName},
 };
 use axum::{
     Router,
-    routing::{delete, get, patch, post, put},
+    routing::{get, patch, post},
 };
+use axum::{
+    extract::FromRef,
+    http::{
+        HeaderValue,
+        header::{AUTHORIZATION, CONTENT_TYPE, HeaderName},
+    },
+};
+use axum_jwt_auth::{Decoder, RemoteJwksDecoder};
 use color_eyre::Result;
+use jsonwebtoken::{Algorithm, Validation};
 use sqlx::{SqlitePool, sqlite::SqliteConnectOptions};
 use std::{env, str::FromStr, sync::Arc};
 use tokio_cron_scheduler::{Job, JobScheduler};
@@ -39,22 +40,17 @@ use tower_http::cors::{Any, CorsLayer};
 use web_push::{
     IsahcWebPushClient, PartialVapidSignatureBuilder, URL_SAFE_NO_PAD, VapidSignatureBuilder,
 };
-use webauthn_rs::{Webauthn, WebauthnBuilder, prelude::Url};
 
 const DATABASE_URL: &str = "DATABASE_URL";
-const JWT_SECRET: &str = "JWT_SECRET";
-const RP_ID: &str = "RP_ID";
-const RP_ORIGIN: &str = "RP_ORIGIN";
 const CORS_ORIGIN: &str = "CORS_ORIGIN";
 
-#[derive(Clone)]
+#[derive(Clone, FromRef)]
 pub struct AppState {
     pub pool: SqlitePool,
-    pub jwt_secret: String,
-    pub webauthn: Arc<Webauthn>,
     pub vapid_subject: String,
     pub vapid_signature_builder: PartialVapidSignatureBuilder,
     pub push_client: IsahcWebPushClient,
+    pub decoder: Decoder<CustomClaims>,
 }
 
 #[tokio::main]
@@ -71,27 +67,39 @@ async fn main() -> Result<()> {
         .await?;
     sqlx::migrate!("./migrations").run(&pool).await?;
 
-    let jwt_secret = env::var(JWT_SECRET)?;
     let cors_origin = env::var(CORS_ORIGIN)?;
 
-    let rp_id = env::var(RP_ID).unwrap_or_else(|_| "localhost".to_string());
-    let rp_origin = env::var(RP_ORIGIN).unwrap_or_else(|_| "http://localhost:5173".to_string());
-    let rp_origin = Url::parse(&rp_origin)?;
-    let webauthn = WebauthnBuilder::new(&rp_id, &rp_origin)?
-        .rp_name("Medication Tracker")
-        .build()?;
     let vapid_private_key = env::var("VAPID_PRIVATE_KEY")?;
     let vapid_subject = env::var("VAPID_SUBJECT")?;
 
     let vapid_signature_builder =
         VapidSignatureBuilder::from_base64_no_sub(&vapid_private_key, URL_SAFE_NO_PAD).unwrap();
+
+    // Set the validation parameters, as of jsonwebtoken version 9, you MUST set the algorithm and the audience
+    let audience = env::var("AUTH0_AUDIENCE")?;
+    let domain = env::var("AUTH0_DOMAIN")?;
+    let issuer = format!("https://{}/", &domain);
+    let mut validation = Validation::new(Algorithm::RS256);
+    validation.set_audience(&[&audience]);
+    validation.set_issuer(&[&issuer]);
+
+    let jwks_url = format!("https://{}/.well-known/jwks.json", &domain);
+
+    // Create a decoder pointing to the JWKS endpoint
+    let decoder = RemoteJwksDecoder::builder()
+        .jwks_url(jwks_url)
+        .validation(validation)
+        .build()
+        .expect("Failed to build JWKS decoder");
+    let decoder = Arc::new(decoder);
+    decoder.initialize().await?;
+
     let state = AppState {
         pool,
-        jwt_secret,
-        webauthn: Arc::new(webauthn),
         vapid_signature_builder,
         vapid_subject,
         push_client: IsahcWebPushClient::new()?,
+        decoder,
     };
 
     let scheduler = JobScheduler::new().await?;
@@ -111,16 +119,7 @@ async fn main() -> Result<()> {
     scheduler.start().await?;
 
     let app = Router::new()
-        .route("/health", get(health))
-        .route("/auth/login", post(login))
-        .route("/auth/register", post(register))
-        .route("/auth/password", put(change_password))
-        .route("/auth/passkey/register/begin", post(register_begin))
-        .route("/auth/passkey/register/complete", post(register_complete))
-        .route("/auth/passkey/login/begin", post(login_begin))
-        .route("/auth/passkey/login/complete", post(login_complete))
-        .route("/auth/passkeys", get(list_passkeys))
-        .route("/auth/passkeys/{credential_id}", delete(delete_passkey))
+        .route("/health", get(status))
         .route(
             "/medications",
             get(list_medications).post(create_medication),

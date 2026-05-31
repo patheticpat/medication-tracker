@@ -1,4 +1,3 @@
-pub mod auth;
+pub mod health;
 pub mod medications;
-pub mod passkey;
 pub mod push;

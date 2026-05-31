@@ -1,22 +1,16 @@
 <script setup lang="ts">
 import { useMidnightRefresh } from './composables/useMidnightRefresh'
 import { useRoute, useRouter } from 'vue-router'
-import { useAuthStore } from './stores/auth'
-import { storeToRefs } from 'pinia'
+import { useAuth0 } from '@auth0/auth0-vue'
 import ToastContainer from './components/ToastContainer.vue'
+import LoginButton from './components/buttons/LoginButton.vue'
+import LogoutButton from './components/buttons/LogoutButton.vue'
 
-const authStore = useAuthStore()
-const { isLoggedIn } = storeToRefs(authStore)
-const { logout } = authStore
+const { isAuthenticated } = useAuth0()
 
 useMidnightRefresh()
 const route = useRoute()
 const router = useRouter()
-
-function handleLogout() {
-  logout()
-  router.replace({ name: 'login' })
-}
 
 function handleLogoClick() {
   if (route.name !== 'dashboard') {
@@ -39,17 +33,12 @@ function handleLogoClick() {
           <RouterLink
             :to="{ name: 'settings' }"
             class="text-sm text-gray-500 hover:text-gray-700 transition-colors"
-            v-if="isLoggedIn"
+            v-if="isAuthenticated"
           >
             Settings
           </RouterLink>
-          <button
-            v-if="isLoggedIn"
-            @click="handleLogout"
-            class="text-sm text-gray-500 hover:text-gray-700 transition-colors"
-          >
-            Logout
-          </button>
+          <LoginButton v-if="!isAuthenticated" />
+          <LogoutButton v-if="isAuthenticated" />
         </div>
       </div>
     </nav>

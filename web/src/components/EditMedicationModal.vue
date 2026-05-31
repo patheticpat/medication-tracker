@@ -1,14 +1,11 @@
 <script setup lang="ts">
-import { updateMedication } from '@/api/medications'
-import { MEDICATION_KEYS } from '@/stores/medications'
-import type { UpdateMedicationArgs, MedicationWithStats, Schedule } from '@/types/medication'
-import { useMutation, useQueryCache } from '@pinia/colada'
+import { useUpdateMedication } from '@/stores/medications'
+import type { MedicationWithStats, Schedule } from '@/types/medication'
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { X } from 'lucide-vue-next'
 
 const router = useRouter()
-const cache = useQueryCache()
 const props = defineProps<{ medication: MedicationWithStats }>()
 const name = ref(props.medication.name)
 const unit = ref(props.medication.unit)
@@ -28,18 +25,15 @@ const isValid = computed(() => {
   )
 })
 
-const { mutateAsync, isLoading } = useMutation({
-  mutation: (data: UpdateMedicationArgs) => updateMedication(data.id, data),
-  onSettled: () => cache.invalidateQueries({ key: MEDICATION_KEYS.root }),
-})
+const updateMedication = useUpdateMedication(props.medication.id)
+const isLoading = updateMedication.isLoading
 
 const handleSubmit = async () => {
   const schedule: Schedule =
     scheduleKind.value === 'daily'
       ? { kind: 'daily', amount: scheduleAmount.value }
       : { kind: 'weekly', amount: scheduleAmount.value, dayOfWeek: scheduleDayOfWeek.value }
-  await mutateAsync({
-    id: props.medication.id,
+  await updateMedication.mutateAsync({
     name: name.value,
     unit: unit.value,
     warningThreshold: warningThreshold.value,

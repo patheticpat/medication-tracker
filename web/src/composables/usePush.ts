@@ -1,5 +1,5 @@
 import { ref, computed, onMounted } from 'vue'
-import { getVapidPublicKey, subscribePush, testPush, unsubscribePush } from '@/api/push'
+import { useApi } from './useApi'
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array<ArrayBuffer> {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4)
@@ -9,6 +9,7 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array<ArrayBuffer> {
 }
 
 export function usePush() {
+  const { getVapidPublicKey, subscribePush, testPush, unsubscribePush } = useApi()
   const isLoading = ref(false)
   const error = ref<string | null>(null)
   const isSubscribed = ref(false)

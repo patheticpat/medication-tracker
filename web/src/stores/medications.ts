@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryCache } from '@pinia/colada'
-import { createLogEntry, getMedications, updateSnooze } from '@/api/medications'
-import type { CreateLogEntry, MedicationWithStats } from '@/types/medication'
+import type { CreateLogEntry, MedicationWithStats, UpdateMedication } from '@/types/medication'
 import { useToast } from '@/composables/useToast'
+import { useApi } from '@/composables/useApi'
 
 export const MEDICATION_KEYS = {
   root: ['medications'] as const,
@@ -9,6 +9,8 @@ export const MEDICATION_KEYS = {
 }
 
 export function useMedications() {
+  const { getMedications } = useApi()
+
   return useQuery({
     key: MEDICATION_KEYS.root,
     query: getMedications,
@@ -16,6 +18,7 @@ export function useMedications() {
 }
 
 export function useCreateLogEntry(id: string) {
+  const { createLogEntry } = useApi()
   const cache = useQueryCache()
   return useMutation({
     mutation: (log: CreateLogEntry) => createLogEntry(id, log),
@@ -25,7 +28,23 @@ export function useCreateLogEntry(id: string) {
   })
 }
 
+export function useUpdateMedication(id: string) {
+  const { updateMedication } = useApi()
+  const { addToast } = useToast()
+  const cache = useQueryCache()
+
+  return useMutation({
+    mutation: (medication: UpdateMedication) => updateMedication(id, medication),
+    onError: () => addToast('Failed to update medication', 'error'),
+    onSuccess: () => {
+      addToast('Medication updated', 'success')
+      cache.invalidateQueries({ key: MEDICATION_KEYS.root })
+    },
+  })
+}
+
 export function useUpdateSnooze() {
+  const { updateSnooze } = useApi()
   const cache = useQueryCache()
   const { addToast } = useToast()
 

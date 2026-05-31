@@ -18,7 +18,7 @@ export interface CreateMedication extends Omit<Medication, 'id' | 'logs' | 'snoo
 }
 
 export type UpdateMedication = Partial<Omit<Medication, 'id' | 'logs'>>
-export type UpdateMedicationArgs = { id: string } & UpdateMedication
+export type UpdateMedicationArgs = { id: string; medication: UpdateMedication }
 
 export type LogEntryKind = 'baseline' | 'refill'
 

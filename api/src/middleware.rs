@@ -1,14 +1,18 @@
 use axum::extract::FromRequestParts;
 use axum::http::request::Parts;
-use axum_extra::TypedHeader;
-use axum_extra::headers::{Authorization, authorization::Bearer};
-use jsonwebtoken::{DecodingKey, Validation, decode};
+use axum_jwt_auth::Claims;
+use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 use crate::AppState;
 use crate::errors::AppError;
-use crate::models::Claims;
 
 pub struct AuthUser(pub String); // user_id
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct CustomClaims {
+    sub: String,
+}
 
 impl FromRequestParts<AppState> for AuthUser {
     type Rejection = AppError;
@@ -17,21 +21,33 @@ impl FromRequestParts<AppState> for AuthUser {
         parts: &mut Parts,
         state: &AppState,
     ) -> Result<Self, Self::Rejection> {
-        // 1. Authorization Header extrahieren
-        let token = TypedHeader::<Authorization<Bearer>>::from_request_parts(parts, state)
+        let custom_claims = Claims::<CustomClaims>::from_request_parts(parts, state)
             .await
             .map_err(|_| AppError::Unauthorized)?;
+        let id = Uuid::now_v7();
+        let id = id.to_string();
 
-        // 2. JWT validieren
-        let key = DecodingKey::from_secret(state.jwt_secret.as_bytes());
-        let token_data = decode::<Claims>(
-            &token.token(),
-            &key,
-            &Validation::new(jsonwebtoken::Algorithm::HS256),
+        let mut tx = state.pool.begin().await?;
+        sqlx::query!(
+            r"
+            INSERT OR IGNORE INTO users (id, auth0_sub)
+            VALUES (?, ?);
+            ",
+            id,
+            custom_claims.claims.sub
         )
-        .map_err(|_| AppError::Unauthorized)?;
+        .execute(&mut *tx)
+        .await?;
+        let r = sqlx::query!(
+            r"
+            SELECT id as 'id!' FROM users WHERE auth0_sub = ?;
+            ",
+            custom_claims.claims.sub
+        )
+        .fetch_one(&mut *tx)
+        .await?;
+        tx.commit().await?;
 
-        // 3. user_id aus Claims zurückgeben
-        Ok(Self(token_data.claims.sub))
+        Ok(Self(r.id))
     }
 }

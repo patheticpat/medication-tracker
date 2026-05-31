@@ -1,10 +1,10 @@
 {
   "db_name": "SQLite",
-  "query": "SELECT password_hash FROM users WHERE id = ?",
+  "query": "\n            SELECT id as 'id!' FROM users WHERE auth0_sub = ?;\n            ",
   "describe": {
     "columns": [
       {
-        "name": "password_hash",
+        "name": "id!",
         "ordinal": 0,
         "type_info": "Text"
       }
@@ -13,8 +13,8 @@
       "Right": 1
     },
     "nullable": [
-      false
+      true
     ]
   },
-  "hash": "b7831524cb4e52f2970f12032e90bab3c53effb879bf95592e52372ca8e857b0"
+  "hash": "9b70bb2921ffe25b7d65cbf9d749a10a83db0a4c983e20435e58e44686af670f"
 }

@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { createMedication } from '@/api/medications'
 import { MEDICATION_KEYS } from '@/stores/medications'
 import type { Schedule } from '@/types/medication'
 import { useMutation, useQueryCache } from '@pinia/colada'
@@ -7,8 +6,10 @@ import { computed, nextTick, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { X } from 'lucide-vue-next'
 import { useToast } from '@/composables/useToast'
+import { useApi } from '@/composables/useApi'
 
 const { addToast } = useToast()
+const { createMedication } = useApi()
 
 const nameInput = ref<HTMLInputElement | null>(null)
 

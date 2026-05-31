@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { createLogEntry, deleteMedication, getMedicationDetails } from '@/api/medications'
 import { MEDICATION_KEYS, useUpdateSnooze } from '@/stores/medications'
 import type { CreateLogEntry, MedicationWithStats } from '@/types/medication'
 import { useMutation, useQuery, useQueryCache } from '@pinia/colada'
@@ -10,12 +9,14 @@ import EditMedicationModal from '@/components/EditMedicationModal.vue'
 import { formatAmount } from '@/api/base'
 import ClipboardButton from '@/components/ClipboardButton.vue'
 import { useToast } from '@/composables/useToast'
+import { useApi } from '@/composables/useApi'
 
 const router = useRouter()
 const route = useRoute()
 const cache = useQueryCache()
 const { addToast } = useToast()
 const showEditModal = computed(() => route.query.edit === 'true')
+const { getMedicationDetails, createLogEntry, deleteMedication } = useApi()
 const {
   data: medication,
   isLoading,
@@ -51,10 +52,14 @@ const handleDelete = async () => {
     setTimeout(() => (confirmDelete.value = false), 3000)
     return
   }
-  await deleteAsync()
-  addToast(`${medication.value!.name} deleted`, 'success')
-  await router.replace({ name: 'dashboard' })
-  cache.invalidateQueries({ key: MEDICATION_KEYS.root })
+  try {
+    await deleteAsync()
+    addToast(`${medication.value!.name} deleted`, 'success')
+    await router.replace({ name: 'dashboard' })
+    cache.invalidateQueries({ key: MEDICATION_KEYS.root })
+  } catch {
+    addToast(`Failed to delete ${medication.value!.name}`, 'error')
+  }
 }
 
 const handleBaseline = async () => {
