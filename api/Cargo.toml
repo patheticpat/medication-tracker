@@ -5,14 +5,12 @@ edition = "2024"
 
 [dependencies]
 axum = {version = "0.8", features = ["macros"] }
-axum-extra = { version = "0.12.5", features = ["typed-header"] }
 base64 = "0.22.1"
 chrono = { version = "0.4", features = ["serde"] }
 chrono-tz = "0.10.4"
 color-eyre = "0.6"
 dotenvy = "0.15"
 jsonwebtoken = { version = "10.3.0", features = ["rust_crypto"] }
-rand_core = "0.10.0"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 sqlx = { version = "0.8", features = [
