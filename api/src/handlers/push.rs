@@ -82,17 +82,7 @@ pub async fn update_settings(
 ) -> Result<StatusCode, AppError> {
     let timezone = tz.name();
 
-    if body.notification_hour < 0 || body.notification_hour > 23 {
-        return Err(AppError::BadRequest(String::from(
-            "Invalid notificationHour",
-        )));
-    }
-
-    if !days_string_valid(&body.notification_days) {
-        return Err(AppError::BadRequest(String::from(
-            "Invalid notificationDays",
-        )));
-    }
+    body.validate().map_err(AppError::BadRequest)?;
 
     sqlx::query!(
         r"
@@ -117,7 +107,7 @@ pub async fn get_settings(
 ) -> Result<Json<NotificationSettingsResponse>, AppError> {
     let r = sqlx::query!(
         r"
-        SELECT notification_hour, notification_days
+        SELECT notification_hour AS 'notification_hour: u8', notification_days
         FROM user_notification_settings
         WHERE user_id
         = ? ;
@@ -169,32 +159,5 @@ pub async fn test_push(
         Err(AppError::InternalError)
     } else {
         Ok(StatusCode::NO_CONTENT)
-    }
-}
-
-fn days_string_valid(days: &str) -> bool {
-    days.is_empty()
-        || days
-            .split(',')
-            .all(|s| s.parse::<u8>().is_ok_and(|n| n < 7))
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_days_string_valid() {
-        assert!(days_string_valid(""));
-        assert!(days_string_valid("1"));
-        assert!(days_string_valid("5,3,2"));
-        assert!(days_string_valid("0,1,2,3,4,5,6"));
-
-        assert!(!days_string_valid(","));
-        assert!(!days_string_valid("1,b"));
-        assert!(!days_string_valid("1,2,"));
-        assert!(!days_string_valid(",1,2"));
-        assert!(!days_string_valid("1,2,3,4,5,6,7"));
-        assert!(!days_string_valid("just plain invalid"));
     }
 }

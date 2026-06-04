@@ -338,14 +338,36 @@ pub struct TestPushRequest {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct NotificationSettingsRequest {
-    pub notification_hour: i64,
+    pub notification_hour: u8,
     pub notification_days: String, // z.B. "0,1,2,3,4,5,6"
+}
+
+impl NotificationSettingsRequest {
+    pub fn validate(&self) -> Result<(), String> {
+        if !(0u8..=23).contains(&self.notification_hour) {
+            return Err(format!(
+                "invalid notification_hour: {}",
+                self.notification_hour
+            ));
+        }
+
+        if !(self.notification_days.is_empty()
+            || self
+                .notification_days
+                .split(',')
+                .all(|s| s.parse().is_ok_and(|n| (0u8..=6).contains(&n))))
+        {
+            return Err(String::from("invalid notification_days"));
+        }
+
+        Ok(())
+    }
 }
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct NotificationSettingsResponse {
-    pub notification_hour: i64,
+    pub notification_hour: u8,
     pub notification_days: String,
 }
 
@@ -365,6 +387,54 @@ mod tests {
 
     fn date(s: &str) -> NaiveDate {
         NaiveDate::parse_from_str(s, "%Y-%m-%d").unwrap()
+    }
+
+    #[test]
+    fn test_validate_notification_settings_request() {
+        for hour in 0..=23 {
+            let request = NotificationSettingsRequest {
+                notification_hour: hour,
+                notification_days: String::from(""),
+            };
+
+            assert!(request.validate().is_ok());
+        }
+
+        for hour in 24..=u8::MAX {
+            let request = NotificationSettingsRequest {
+                notification_hour: hour,
+                notification_days: String::from(""),
+            };
+
+            assert!(request.validate().is_err());
+        }
+
+        let valid_days = vec!["", "1", "5,3,2", "0,1,2,3,4,5,6"];
+
+        for days in valid_days {
+            let request = NotificationSettingsRequest {
+                notification_hour: 0,
+                notification_days: String::from(days),
+            };
+            assert!(request.validate().is_ok());
+        }
+
+        let invalid_days = vec![
+            ",",
+            "1,b",
+            "1,2,",
+            ",1,2",
+            "1,2,3,4,5,6,7",
+            "just plain invalid",
+        ];
+
+        for days in invalid_days {
+            let request = NotificationSettingsRequest {
+                notification_hour: 0,
+                notification_days: String::from(days),
+            };
+            assert!(request.validate().is_err());
+        }
     }
 
     #[test]
