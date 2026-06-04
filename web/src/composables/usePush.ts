@@ -1,5 +1,6 @@
 import { ref, computed, onMounted } from 'vue'
 import { useApi } from './useApi'
+import { useToast } from './useToast'
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array<ArrayBuffer> {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4)
@@ -10,6 +11,7 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array<ArrayBuffer> {
 
 export function usePush() {
   const { getVapidPublicKey, subscribePush, testPush, unsubscribePush } = useApi()
+  const { addToast } = useToast()
   const isLoading = ref(false)
   const error = ref<string | null>(null)
   const isSubscribed = ref(false)
@@ -44,8 +46,10 @@ export function usePush() {
       })
       await subscribePush(subscription.toJSON())
       isSubscribed.value = true
+      addToast('Notifications enabled', 'success')
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Unbekannter Fehler'
+      addToast('Failed to enable notifications', 'error')
     } finally {
       isLoading.value = false
     }
@@ -62,9 +66,11 @@ export function usePush() {
         await unsubscribePush(subscription.endpoint)
         await subscription.unsubscribe()
         isSubscribed.value = false
+        addToast('Notifications disabled', 'success')
       }
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Unbekannter Fehler'
+      addToast('Failed to disable notifications', 'error')
     } finally {
       isLoading.value = false
     }
@@ -79,8 +85,10 @@ export function usePush() {
       const subscription = await registration.pushManager.getSubscription()
       if (!subscription) return
       await testPush(subscription.endpoint)
+      addToast('Test notification sent', 'success')
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Unbekannter Fehler'
+      addToast('Failed to send test notification', 'error')
     } finally {
       isLoading.value = false
     }

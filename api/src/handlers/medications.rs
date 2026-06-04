@@ -4,6 +4,7 @@ use axum::{
     http::StatusCode,
     response::{IntoResponse, Response},
 };
+use axum_valid::Valid;
 use chrono::NaiveDate;
 use color_eyre::eyre::OptionExt;
 use sqlx::SqlitePool;
@@ -15,8 +16,9 @@ use crate::{
     extractors::LocalDate,
     middleware::AuthUser,
     models::{
-        CreateLogEntry, CreateMedication, DbMedication, DbMedicationWithLogRow, LogEntry,
-        Medication, MedicationWithStats, PatchSnooze, Schedule, UpdateMedication,
+        CreateLogEntryRequest, CreateMedicationRequest, DbMedication, DbMedicationWithLogRow,
+        LogEntry, Medication, MedicationWithStats, PatchSnoozeRequest, Schedule,
+        UpdateMedicationRequest,
     },
 };
 
@@ -237,7 +239,7 @@ pub async fn create_medication(
     State(state): State<AppState>,
     AuthUser(user_id): AuthUser,
     LocalDate(at): LocalDate,
-    Json(body): Json<CreateMedication>,
+    Valid(Json(body)): Valid<Json<CreateMedicationRequest>>,
 ) -> Result<Response, AppError> {
     let id = Uuid::now_v7();
     let id_str = id.to_string();
@@ -248,12 +250,6 @@ pub async fn create_medication(
             amount,
         } => ("weekly", amount, Some(day_of_week)),
     };
-
-    if amount <= 0. {
-        return Err(AppError::BadRequest(String::from(
-            "Schedule must have a strictly positive amount",
-        )));
-    }
 
     let mut tx = state.pool.begin().await?;
     sqlx::query!(
@@ -355,7 +351,7 @@ pub async fn update_medication(
     AuthUser(user_id): AuthUser,
     LocalDate(at): LocalDate,
     Path(id): Path<Uuid>,
-    Json(body): Json<UpdateMedication>,
+    Valid(Json(body)): Valid<Json<UpdateMedicationRequest>>,
 ) -> Result<Json<MedicationWithStats>, AppError> {
     let id = id.to_string();
     if let Some(mut medication) = sqlx::query_as!(
@@ -395,11 +391,6 @@ pub async fn update_medication(
                 } => (String::from("weekly"), amount, Some(day_of_week as i64)),
             };
 
-            if amount <= 0. {
-                return Err(AppError::BadRequest(String::from(
-                    "Schedule must have a strictly positive amount",
-                )));
-            }
             medication.schedule_kind = kind;
             medication.schedule_amount = amount;
             medication.schedule_day_of_week = day;
@@ -446,12 +437,13 @@ pub async fn update_medication(
         Err(AppError::NotFound)
     }
 }
+
 pub async fn patch_snooze(
     State(state): State<AppState>,
     AuthUser(user_id): AuthUser,
     LocalDate(at): LocalDate,
     Path(id): Path<Uuid>,
-    Json(body): Json<PatchSnooze>,
+    Json(body): Json<PatchSnoozeRequest>,
 ) -> Result<Json<MedicationWithStats>, AppError> {
     let id = id.to_string();
     let result = sqlx::query!(
@@ -482,7 +474,7 @@ pub async fn create_log_entry(
     AuthUser(user_id): AuthUser,
     Path(id): Path<Uuid>,
     LocalDate(today): LocalDate,
-    Json(body): Json<CreateLogEntry>,
+    Valid(Json(body)): Valid<Json<CreateLogEntryRequest>>,
 ) -> Result<Json<MedicationWithStats>, AppError> {
     let med_id = id.to_string();
     let result = sqlx::query!(
@@ -497,8 +489,8 @@ pub async fn create_log_entry(
     }
 
     let (kind, amount, note) = match body {
-        CreateLogEntry::Baseline { amount, note } => ("baseline", amount, note),
-        CreateLogEntry::Refill { amount, note } => ("refill", amount, note),
+        CreateLogEntryRequest::Baseline { amount, note } => ("baseline", amount, note),
+        CreateLogEntryRequest::Refill { amount, note } => ("refill", amount, note),
     };
     let log_id = Uuid::now_v7().to_string();
 

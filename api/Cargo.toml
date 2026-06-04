@@ -25,3 +25,6 @@ uuid = { version = "1", features = ["v7", "serde"] }
 web-push = "0.10"
 tokio-cron-scheduler = "0.13"
 axum-jwt-auth = "0.7.0"
+axum-valid = "0.24.0"
+validator = { version = "0.20.0", features = ["derive"] }
+parameterized = "2.1.0"

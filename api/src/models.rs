@@ -1,9 +1,12 @@
+use std::collections::HashSet;
+
 use chrono::{Datelike, NaiveDate, TimeDelta};
 use color_eyre::eyre::eyre;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
+use validator::{Validate, ValidationError, ValidationErrors};
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Medication {
     pub id: Uuid,
@@ -25,28 +28,35 @@ pub struct MedicationWithStats {
     pub days_remaining: u64,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Deserialize, Validate)]
 #[serde(rename_all = "camelCase")]
-pub struct CreateMedication {
+pub struct CreateMedicationRequest {
+    #[validate(length(min = 3))]
     pub name: String,
+    #[validate(length(min = 1))]
     pub unit: String,
+    #[validate(nested)]
     pub schedule: Schedule,
     pub warning_threshold: u16,
+    #[validate(range(exclusive_min = 0.0))]
     pub initial_stock: f64,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Deserialize, Validate)]
 #[serde(rename_all = "camelCase")]
-pub struct UpdateMedication {
+pub struct UpdateMedicationRequest {
+    #[validate(length(min = 3))]
     pub name: Option<String>,
+    #[validate(length(min = 1))]
     pub unit: Option<String>,
+    #[validate(nested)]
     pub schedule: Option<Schedule>,
     pub warning_threshold: Option<u16>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct PatchSnooze {
+pub struct PatchSnoozeRequest {
     pub snoozed: bool,
 }
 
@@ -106,14 +116,41 @@ impl TryFrom<DbMedication> for Medication {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Deserialize)]
 #[serde(tag = "kind", rename_all = "camelCase")]
-pub enum CreateLogEntry {
+pub enum CreateLogEntryRequest {
     Baseline { amount: f64, note: Option<String> },
     Refill { amount: f64, note: Option<String> },
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+impl Validate for CreateLogEntryRequest {
+    fn validate(&self) -> Result<(), ValidationErrors> {
+        let mut errors = ValidationErrors::new();
+        match self {
+            CreateLogEntryRequest::Baseline { amount, note } => {
+                if amount < &0.0 {
+                    errors.add("amount", ValidationError::new("can't be negative"))
+                }
+                if note.as_ref().is_some_and(|s| s.is_empty()) {
+                    errors.add("note", ValidationError::new("can't be empty"))
+                }
+            }
+            CreateLogEntryRequest::Refill { amount: _, note } => {
+                if note.as_ref().is_some_and(|s| s.is_empty()) {
+                    errors.add("note", ValidationError::new("can't be empty"))
+                }
+            }
+        }
+
+        if errors.is_empty() {
+            Ok(())
+        } else {
+            Err(errors)
+        }
+    }
+}
+
+#[derive(Debug, Serialize)]
 #[serde(tag = "kind", rename_all = "camelCase")]
 pub enum LogEntry {
     Baseline {
@@ -167,6 +204,37 @@ pub enum Schedule {
     Daily { amount: f64 },
     #[serde(rename_all = "camelCase")]
     Weekly { day_of_week: u8, amount: f64 },
+}
+
+impl Validate for Schedule {
+    fn validate(&self) -> Result<(), validator::ValidationErrors> {
+        let mut errors = ValidationErrors::new();
+
+        match self {
+            Schedule::Daily { amount } => {
+                if amount.signum() != 1.0 {
+                    errors.add("amount", ValidationError::new("must not be negative"));
+                }
+            }
+            Schedule::Weekly {
+                day_of_week,
+                amount,
+            } => {
+                if amount.signum() != 1.0 {
+                    errors.add("amount", ValidationError::new("must not be negative"));
+                }
+                if !(0..=6).contains(day_of_week) {
+                    errors.add("day_of_week", ValidationError::new("must be 0 to 6"));
+                }
+            }
+        };
+
+        if errors.is_empty() {
+            Ok(())
+        } else {
+            Err(errors)
+        }
+    }
 }
 
 impl LogEntry {
@@ -274,53 +342,55 @@ pub struct VapidPublicKeyResponse {
     pub public_key: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Validate)]
 #[serde(rename_all = "camelCase")]
 pub struct SubscribeRequest {
+    #[validate(url)]
     pub endpoint: String,
+    #[validate(length(min = 1))]
     pub p256dh: String,
+    #[validate(length(min = 1))]
     pub auth: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Validate)]
 #[serde(rename_all = "camelCase")]
 pub struct DeletePushRequest {
+    #[validate(url)]
     pub endpoint: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Validate)]
 #[serde(rename_all = "camelCase")]
 pub struct TestPushRequest {
+    #[validate(url)]
     pub endpoint: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Validate)]
 #[serde(rename_all = "camelCase")]
 pub struct NotificationSettingsRequest {
+    #[validate(range(min = 0, max = 23))]
     pub notification_hour: u8,
+    #[validate(custom(function = "validate_notification_days"))]
     pub notification_days: String, // z.B. "0,1,2,3,4,5,6"
 }
 
-impl NotificationSettingsRequest {
-    pub fn validate(&self) -> Result<(), String> {
-        if !(0u8..=23).contains(&self.notification_hour) {
-            return Err(format!(
-                "invalid notification_hour: {}",
-                self.notification_hour
-            ));
-        }
-
-        if !(self.notification_days.is_empty()
-            || self
-                .notification_days
-                .split(',')
-                .all(|s| s.parse().is_ok_and(|n| (0u8..=6).contains(&n))))
-        {
-            return Err(String::from("invalid notification_days"));
-        }
-
-        Ok(())
+fn validate_notification_days(value: &str) -> Result<(), ValidationError> {
+    if value.is_empty() {
+        return Ok(());
     }
+    if let Ok(elements) = value
+        .splitn(7, ',')
+        .map(|s| s.parse::<u8>())
+        .collect::<Result<Vec<_>, _>>()
+    {
+        let days_set = elements.iter().collect::<HashSet<_>>();
+        if days_set.len() == elements.len() && days_set.into_iter().all(|n| (0..=6).contains(n)) {
+            return Ok(());
+        }
+    }
+    Err(ValidationError::new("invalid weekdays"))
 }
 
 #[derive(Debug, Serialize)]
@@ -343,57 +413,31 @@ impl Default for NotificationSettingsResponse {
 mod tests {
     use super::*;
     use chrono::NaiveDate;
+    use parameterized::parameterized;
 
     fn date(s: &str) -> NaiveDate {
         NaiveDate::parse_from_str(s, "%Y-%m-%d").unwrap()
     }
 
-    #[test]
-    fn test_validate_notification_settings_request() {
-        for hour in 0..=23 {
-            let request = NotificationSettingsRequest {
-                notification_hour: hour,
-                notification_days: String::from(""),
-            };
+    #[parameterized(value = {
+        "", "1", "5,3,2", "0,1,2,3,4,5,6"
+    })]
+    fn test_validate_valid_weekdays(value: &str) {
+        assert!(validate_notification_days(value).is_ok());
+    }
 
-            assert!(request.validate().is_ok());
-        }
-
-        for hour in 24..=u8::MAX {
-            let request = NotificationSettingsRequest {
-                notification_hour: hour,
-                notification_days: String::from(""),
-            };
-
-            assert!(request.validate().is_err());
-        }
-
-        let valid_days = vec!["", "1", "5,3,2", "0,1,2,3,4,5,6"];
-
-        for days in valid_days {
-            let request = NotificationSettingsRequest {
-                notification_hour: 0,
-                notification_days: String::from(days),
-            };
-            assert!(request.validate().is_ok());
-        }
-
-        let invalid_days = vec![
+    #[parameterized(value = {
             ",",
             "1,b",
             "1,2,",
             ",1,2",
             "1,2,3,4,5,6,7",
+            "1,5,6,1,2,2,3,4,5,6,7",
             "just plain invalid",
-        ];
-
-        for days in invalid_days {
-            let request = NotificationSettingsRequest {
-                notification_hour: 0,
-                notification_days: String::from(days),
-            };
-            assert!(request.validate().is_err());
-        }
+            "1,2,1",
+    })]
+    fn test_validate_invalid_weekdays(value: &str) {
+        assert!(validate_notification_days(value).is_err());
     }
 
     #[test]

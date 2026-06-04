@@ -1,4 +1,5 @@
 use axum::{Json, extract::State, http::StatusCode};
+use axum_valid::Valid;
 use base64::{Engine, prelude::BASE64_URL_SAFE_NO_PAD};
 use uuid::Uuid;
 use web_push::SubscriptionInfo;
@@ -29,7 +30,7 @@ pub async fn get_vapid_public_key(State(state): State<AppState>) -> Json<VapidPu
 pub async fn subscribe(
     State(state): State<AppState>,
     AuthUser(user_id): AuthUser,
-    Json(body): Json<SubscribeRequest>,
+    Valid(Json(body)): Valid<Json<SubscribeRequest>>,
 ) -> Result<StatusCode, AppError> {
     let uuid = Uuid::now_v7();
     let uuid = uuid.to_string();
@@ -59,7 +60,7 @@ pub async fn subscribe(
 pub async fn unsubscribe(
     State(state): State<AppState>,
     AuthUser(user_id): AuthUser,
-    Json(body): Json<DeletePushRequest>,
+    Valid(Json(body)): Valid<Json<DeletePushRequest>>,
 ) -> Result<StatusCode, AppError> {
     sqlx::query!(
         "DELETE FROM push_subscriptions WHERE endpoint = ? AND user_id = ?",
@@ -78,11 +79,9 @@ pub async fn update_settings(
     State(state): State<AppState>,
     AuthUser(user_id): AuthUser,
     Timezone(tz): Timezone,
-    Json(body): Json<NotificationSettingsRequest>,
+    Valid(Json(body)): Valid<Json<NotificationSettingsRequest>>,
 ) -> Result<StatusCode, AppError> {
     let timezone = tz.name();
-
-    body.validate().map_err(AppError::BadRequest)?;
 
     sqlx::query!(
         r"
@@ -128,7 +127,7 @@ pub async fn get_settings(
 pub async fn test_push(
     State(state): State<AppState>,
     AuthUser(user_id): AuthUser,
-    Json(body): Json<TestPushRequest>,
+    Valid(Json(body)): Valid<Json<TestPushRequest>>,
 ) -> Result<StatusCode, AppError> {
     let subscription = sqlx::query!(
         r"
