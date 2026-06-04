@@ -201,47 +201,6 @@ pub struct User {
     pub password_hash: String,
 }
 
-#[derive(Debug, Deserialize)]
-pub struct RegisterRequest {
-    pub username: String,
-    pub password: String,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct LoginRequest {
-    pub username: String,
-    pub password: String,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct PasskeyLoginRequest {
-    pub username: String,
-}
-
-#[derive(Debug, Serialize)]
-pub struct AuthResponse {
-    pub token: String,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct Claims {
-    pub sub: String, // user id
-    pub exp: usize,  // expiry timestamp
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct PasskeyInfo {
-    pub credential_id: String,
-    pub added_at: i64, // Unix timestamp
-    pub last_used_at: Option<i64>,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct ChangePasswordRequest {
-    pub current_password: String,
-    pub new_password: String,
-}
-
 impl Medication {
     fn calculate_consumption(&self, from: &NaiveDate, to: &NaiveDate) -> f64 {
         let from = *from + TimeDelta::days(1);
