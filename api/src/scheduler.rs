@@ -6,9 +6,15 @@ use web_push::{SubscriptionInfo, WebPushClient, WebPushMessageBuilder};
 use crate::{AppState, handlers::medications::get_all_medications_with_logs};
 
 pub async fn run(state: &AppState) -> Result<(), Box<dyn Error>> {
-    let timezones = sqlx::query!("SELECT DISTINCT timezone FROM user_notification_settings;")
-        .fetch_all(&state.pool)
-        .await?;
+    let timezones = sqlx::query!(
+        r"
+        SELECT DISTINCT s.timezone FROM user_notification_settings s
+        JOIN push_subscriptions p
+            ON s.user_id = p.user_id
+        "
+    )
+    .fetch_all(&state.pool)
+    .await?;
 
     for row in timezones {
         let tz = row.timezone.parse::<chrono_tz::Tz>()?;

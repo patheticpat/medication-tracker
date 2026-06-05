@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "SELECT DISTINCT timezone FROM user_notification_settings;",
+  "query": "\n        SELECT DISTINCT s.timezone FROM user_notification_settings s\n        JOIN push_subscriptions p\n            ON s.user_id = p.user_id\n        ",
   "describe": {
     "columns": [
       {
@@ -16,5 +16,5 @@
       false
     ]
   },
-  "hash": "0862bc7fb1ca72cf83addd5e786d1a02980c60bebb7a490917f04dabe0eafdad"
+  "hash": "df9fcd6e123a063e3e37e2ee1d2795a21a75b8da80681e4543f9ba980ce2392c"
 }
