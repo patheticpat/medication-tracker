@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "\n            UPDATE medications SET name = ?,\n            unit = ?,\n            unit_singular = ?,\n            schedule_kind = ?,\n            schedule_amount = ?,\n            schedule_day_of_week = ?,\n            warning_threshold = ?,\n            snoozed = ? WHERE id = ? AND user_id = ?\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 10
+    },
+    "nullable": []
+  },
+  "hash": "3f5ed992fac5940d3a1399b8e7eb75484871d2fd09e9604834f054605fd4c63e"
+}
