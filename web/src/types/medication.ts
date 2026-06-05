@@ -2,6 +2,7 @@ export interface Medication {
   id: string
   name: string
   unit: string
+  unitSingular?: string
   schedule: Schedule
   warningThreshold: number
   snoozed: boolean

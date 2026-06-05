@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "\n        SELECT\n            id AS 'id!',\n            user_id,\n            name,\n            unit,\n            schedule_kind,\n            schedule_amount,\n            schedule_day_of_week,\n            warning_threshold,\n            snoozed\n        FROM medications\n        WHERE id = ? AND user_id = ?\n        ",
+  "query": "\n        SELECT\n            id AS 'id!',\n            user_id,\n            name,\n            unit,\n            unit_singular,\n            schedule_kind,\n            schedule_amount,\n            schedule_day_of_week,\n            warning_threshold,\n            snoozed\n        FROM medications\n        WHERE id = ? AND user_id = ?\n        ",
   "describe": {
     "columns": [
       {
@@ -24,28 +24,33 @@
         "type_info": "Text"
       },
       {
-        "name": "schedule_kind",
+        "name": "unit_singular",
         "ordinal": 4,
         "type_info": "Text"
       },
       {
-        "name": "schedule_amount",
+        "name": "schedule_kind",
         "ordinal": 5,
+        "type_info": "Text"
+      },
+      {
+        "name": "schedule_amount",
+        "ordinal": 6,
         "type_info": "Float"
       },
       {
         "name": "schedule_day_of_week",
-        "ordinal": 6,
-        "type_info": "Integer"
-      },
-      {
-        "name": "warning_threshold",
         "ordinal": 7,
         "type_info": "Integer"
       },
       {
-        "name": "snoozed",
+        "name": "warning_threshold",
         "ordinal": 8,
+        "type_info": "Integer"
+      },
+      {
+        "name": "snoozed",
+        "ordinal": 9,
         "type_info": "Bool"
       }
     ],
@@ -57,6 +62,7 @@
       false,
       false,
       false,
+      true,
       false,
       false,
       true,
@@ -64,5 +70,5 @@
       false
     ]
   },
-  "hash": "f5a152484cdbc77843fabd0159d59d710833f75abda310f1fb9d81b648d72048"
+  "hash": "f6a234b57a80dc78af0b49b5a9aaefb4a433279f18c4df330d3c2a409e767d81"
 }

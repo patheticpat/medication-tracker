@@ -21,6 +21,6 @@ const handleLogout = () => {
     class="text-sm text-gray-500 hover:text-gray-700 transition-colors cursor-pointer"
     @click="handleLogout"
   >
-    Log Out
+    {{ $t('navigation.logout') }}
   </button>
 </template>

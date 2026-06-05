@@ -5,7 +5,7 @@ import { computed } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { ArrowUpDown, Bell, BellOff } from 'lucide-vue-next'
 import AddMedicationModal from '@/components/AddMedicationModal.vue'
-import { formatAmount } from '@/api/base'
+import { formatAmount, formatUnit } from '@/utils/format'
 import type { MedicationWithStats } from '@/types/medication'
 import ClipboardButton from '@/components/ClipboardButton.vue'
 import SnoozeButton from '@/components/SnoozeButton.vue'
@@ -74,7 +74,7 @@ const snoozeAll = () => {
     Something went wrong. Please try again later.
   </div>
   <div v-else-if="sortedMedications.length === 0" class="text-center py-12 text-gray-400">
-    No medications yet. Add one with the + button.
+    {{ $t('dashboard.noMedications') }}
   </div>
   <div v-else>
     <div
@@ -82,7 +82,7 @@ const snoozeAll = () => {
       class="bg-red-50 border border-red-200 rounded-lg px-5 py-4 mb-6"
     >
       <div class="flex items-center justify-between mb-3">
-        <span class="font-medium text-red-800">Running low</span>
+        <span class="font-medium text-red-800">{{ $t('dashboard.runningLow') }}</span>
         <div class="flex items-center gap-2">
           <SnoozeButton @snooze="snoozeAll" />
           <ClipboardButton :text="clipboardText" />
@@ -99,7 +99,11 @@ const snoozeAll = () => {
         class="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 transition-colors"
       >
         <ArrowUpDown class="w-4 h-4" />
-        {{ sortOrder === 'alphabetical' ? 'A–Z' : 'By urgency' }}
+        {{
+          sortOrder === 'alphabetical'
+            ? $t('dashboard.sort.alphabetical')
+            : $t('dashboard.sort.urgency')
+        }}
       </button>
     </div>
 
@@ -119,7 +123,10 @@ const snoozeAll = () => {
           <div class="flex items-center justify-between">
             <span class="font-medium text-gray-900">{{ medication.name }}</span>
             <div class="flex items-center gap-2">
-              <span class="text-sm text-gray-500">{{ medication.daysRemaining }} days</span>
+              <span class="text-sm text-gray-500"
+                >{{ medication.daysRemaining }}
+                {{ $t('strings.day', medication.daysRemaining) }}</span
+              >
               <button
                 v-if="medication.snoozed && medication.daysRemaining <= medication.warningThreshold"
                 @click.prevent.stop="updateSnooze({ id: medication.id, snoozed: false })"
@@ -136,7 +143,8 @@ const snoozeAll = () => {
           </div>
           <div class="mt-1 mb-3 text-sm text-gray-500">
             <span class="text-lg mr-1">{{ formatAmount(medication.stock) }}</span>
-            {{ medication.unit }} remaining
+            {{ formatUnit(medication.stock, medication.unit, medication.unitSingular) }}
+            {{ $t('dashboard.remaining') }}
           </div>
           <div class="mt-auto h-1.5 bg-gray-200 rounded-full overflow-hidden">
             <div

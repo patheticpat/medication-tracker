@@ -17,6 +17,6 @@ export default defineConfig({
     },
   },
   define: {
-    __GIT_SHA__: JSON.stringify(process.env.GIT_SHA ?? 'unknown'),
+    __GIT_SHA__: JSON.stringify(process.env.GIT_SHA ?? ''),
   },
 })

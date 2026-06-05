@@ -12,6 +12,7 @@ pub struct Medication {
     pub id: Uuid,
     pub name: String,
     pub unit: String,
+    pub unit_singular: Option<String>,
     pub schedule: Schedule,
     pub warning_threshold: u16,
     pub snoozed: bool,
@@ -35,6 +36,8 @@ pub struct CreateMedicationRequest {
     pub name: String,
     #[validate(length(min = 1))]
     pub unit: String,
+    #[validate(length(min = 1))]
+    pub unit_singular: Option<String>,
     #[validate(nested)]
     pub schedule: Schedule,
     pub warning_threshold: u16,
@@ -49,6 +52,8 @@ pub struct UpdateMedicationRequest {
     pub name: Option<String>,
     #[validate(length(min = 1))]
     pub unit: Option<String>,
+    #[validate(length(min = 1))]
+    pub unit_singular: Option<String>,
     #[validate(nested)]
     pub schedule: Option<Schedule>,
     pub warning_threshold: Option<u16>,
@@ -66,6 +71,7 @@ pub struct DbMedicationWithLogRow {
     pub user_id: String,
     pub name: String,
     pub unit: String,
+    pub unit_singular: Option<String>,
     pub schedule_kind: String,
     pub schedule_amount: f64,
     pub schedule_day_of_week: Option<i64>,
@@ -84,6 +90,7 @@ pub struct DbMedication {
     pub user_id: String,
     pub name: String,
     pub unit: String,
+    pub unit_singular: Option<String>,
     pub schedule_kind: String,
     pub schedule_amount: f64,
     pub schedule_day_of_week: Option<i64>,
@@ -99,6 +106,7 @@ impl TryFrom<DbMedication> for Medication {
             id: Uuid::parse_str(&value.id)?,
             name: value.name,
             unit: value.unit,
+            unit_singular: value.unit_singular,
             schedule: match value.schedule_kind.as_ref() {
                 "daily" => Schedule::Daily {
                     amount: value.schedule_amount,
@@ -446,6 +454,7 @@ mod tests {
             id: Uuid::nil(),
             name: String::from("ASS"),
             unit: String::from("Tabletten"),
+            unit_singular: None,
             schedule: Schedule::Daily { amount: 5. },
             warning_threshold: 14,
             snoozed: false,
@@ -470,6 +479,7 @@ mod tests {
             id: Uuid::nil(),
             name: String::from("ASS"),
             unit: String::from("Tabletten"),
+            unit_singular: None,
             schedule: Schedule::Daily { amount: 1. },
             warning_threshold: 14,
             snoozed: false,
@@ -501,6 +511,7 @@ mod tests {
             id: Uuid::nil(),
             name: String::from("ASS"),
             unit: String::from("Tabletten"),
+            unit_singular: None,
             schedule: Schedule::Weekly {
                 day_of_week: 1,
                 amount: 1.,
@@ -539,6 +550,7 @@ mod tests {
             id: Uuid::nil(),
             name: String::from("ASS"),
             unit: String::from("Tabletten"),
+            unit_singular: None,
             schedule: Schedule::Weekly {
                 day_of_week: 1,
                 amount: 1.,
@@ -578,6 +590,7 @@ mod tests {
             id: Uuid::nil(),
             name: String::from("ASS"),
             unit: String::from("Tabletten"),
+            unit_singular: None,
             schedule: Schedule::Weekly {
                 day_of_week: 1,
                 amount: 1.,

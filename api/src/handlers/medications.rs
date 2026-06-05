@@ -34,6 +34,7 @@ pub async fn get_all_medications_with_logs(
             m.user_id,
             m.name,
             m.unit,
+            m.unit_singular,
             m.schedule_kind,
             m.schedule_amount,
             m.schedule_day_of_week,
@@ -60,6 +61,7 @@ pub async fn get_all_medications_with_logs(
                 id: Uuid::parse_str(&row.id).map_err(|_| AppError::InternalError)?,
                 name: row.name,
                 unit: row.unit,
+                unit_singular: row.unit_singular,
                 schedule: match row.schedule_kind.as_str() {
                     "daily" => Schedule::Daily {
                         amount: row.schedule_amount,
@@ -130,6 +132,7 @@ async fn get_medication_with_logs(
             m.user_id,
             m.name,
             m.unit,
+            m.unit_singular,
             m.schedule_kind,
             m.schedule_amount,
             m.schedule_day_of_week,
@@ -154,6 +157,7 @@ async fn get_medication_with_logs(
             id: Uuid::parse_str(&row.id).map_err(|_| AppError::InternalError)?,
             name: row.name.clone(),
             unit: row.unit.clone(),
+            unit_singular: row.unit_singular.clone(),
             schedule: match row.schedule_kind.as_str() {
                 "daily" => Schedule::Daily {
                     amount: row.schedule_amount,
@@ -259,16 +263,18 @@ pub async fn create_medication(
             user_id,
             name,
             unit,
+            unit_singular,
             schedule_kind,
             schedule_amount,
             schedule_day_of_week,
             warning_threshold
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         ",
         id_str,
         user_id,
         body.name,
         body.unit,
+        body.unit_singular,
         kind,
         amount,
         day,
@@ -362,6 +368,7 @@ pub async fn update_medication(
             user_id,
             name,
             unit,
+            unit_singular,
             schedule_kind,
             schedule_amount,
             schedule_day_of_week,
@@ -407,6 +414,7 @@ pub async fn update_medication(
             r"
             UPDATE medications SET name = ?,
             unit = ?,
+            unit_singular = ?,
             schedule_kind = ?,
             schedule_amount = ?,
             schedule_day_of_week = ?,
@@ -415,6 +423,7 @@ pub async fn update_medication(
             ",
             medication.name,
             medication.unit,
+            body.unit_singular,
             medication.schedule_kind,
             medication.schedule_amount,
             medication.schedule_day_of_week,

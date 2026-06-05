@@ -27,7 +27,7 @@ onUnmounted(() => {
   >
     <ClipboardCheck v-if="copied" class="w-4 h-4" />
     <ClipboardCopy v-else class="w-4 h-4" />
-    {{ copied ? 'Copied!' : 'Copy' }}
+    {{ copied ? $t('clipboard.copied') : $t('clipboard.copy') }}
   </button>
 </template>
 

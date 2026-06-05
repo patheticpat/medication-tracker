@@ -6,10 +6,13 @@ import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Trash2, Pencil, Bell, BellOff } from 'lucide-vue-next'
 import EditMedicationModal from '@/components/EditMedicationModal.vue'
-import { formatAmount } from '@/api/base'
+import { formatAmount, formatUnit } from '@/utils/format'
 import ClipboardButton from '@/components/ClipboardButton.vue'
 import { useToast } from '@/composables/useToast'
 import { useApi } from '@/composables/useApi'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 const router = useRouter()
 const route = useRoute()
@@ -87,16 +90,29 @@ const refillNote = ref('')
 const baselineAmount = ref(0)
 const baselineNote = ref('')
 
-const schedule = computed(() => {
+const _schedulek = computed(() => {
   if (!medication.value) return ''
   const m = medication.value
-  const dosage = `${m.schedule.amount} ${m.unit}`
+  const dosage = `${m.schedule.amount} ${formatUnit(m.schedule.amount, m.unit, m.unitSingular)}`
   if (m.schedule.kind === 'weekly') {
     const weekdays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
     const day = weekdays[m.schedule.dayOfWeek]
     return `${dosage} per week (every ${day})`
   } else {
     return `${dosage} per day`
+  }
+})
+
+const schedule = computed(() => {
+  if (!medication.value) return ''
+  const m = medication.value
+  const dosage = `${m.schedule.amount} ${formatUnit(m.schedule.amount, m.unit, m.unitSingular)}`
+  if (m.schedule.kind === 'daily') {
+    return t('medication.dailyDose', { dosage })
+  } else {
+    const weekdays = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
+    const day = t(`strings.weekdays.on.${weekdays[m.schedule.dayOfWeek]}`)
+    return t('medication.weeklyDose', { dosage, day })
   }
 })
 
@@ -129,13 +145,14 @@ const logEntries = computed(() => {
     <!-- Stock Info -->
     <div class="bg-white rounded-lg border border-gray-200 px-5 py-4 mb-6">
       <div class="flex justify-between items-center">
-        <span class="text-gray-500 text-sm">Current stock</span>
+        <span class="text-gray-500 text-sm">{{ $t('medication.stock') }}</span>
         <span class="font-medium text-gray-900"
-          >{{ formatAmount(medication.stock) }} {{ medication.unit }}</span
+          >{{ formatAmount(medication.stock) }}
+          {{ formatUnit(medication.stock, medication.unit, medication.unitSingular) }}</span
         >
       </div>
       <div class="flex justify-between items-center mt-2">
-        <span class="text-gray-500 text-sm">Days remaining</span>
+        <span class="text-gray-500 text-sm">{{ $t('medication.daysRemaining') }}</span>
         <span
           class="font-medium"
           :class="
@@ -146,20 +163,21 @@ const logEntries = computed(() => {
               : 'text-green-600'
           "
         >
-          {{ medication.daysRemaining }} days
+          {{ medication.daysRemaining }} {{ $t('strings.day', medication.daysRemaining) }}
         </span>
       </div>
       <div class="flex justify-between items-center mt-2">
-        <span class="text-gray-500 text-sm">Warning threshold</span>
+        <span class="text-gray-500 text-sm">{{ $t('medication.threshold') }}</span>
         <span class="font-medium text-gray-900"
-          >{{ formatAmount(medication.warningThreshold) }} days</span
+          >{{ formatAmount(medication.warningThreshold) }}
+          {{ $t('strings.day', medication.warningThreshold) }}</span
         >
       </div>
     </div>
     <div class="grid grid-cols-2 gap-3 mb-2">
       <!-- Refill -->
       <div class="bg-white rounded-lg border border-gray-200 px-5 py-4">
-        <h2 class="font-medium text-gray-900 mb-3">Refill</h2>
+        <h2 class="font-medium text-gray-900 mb-3">{{ $t('medication.refill') }}</h2>
         <form @submit.prevent="handleRefill" class="flex flex-col gap-2">
           <input
             type="number"
@@ -171,7 +189,7 @@ const logEntries = computed(() => {
           <input
             type="text"
             v-model.trim="refillNote"
-            placeholder="Note (optional)"
+            :placeholder="t('medication.note')"
             class="border border-gray-200 rounded-md px-3 py-1.5 text-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           <button
@@ -179,14 +197,14 @@ const logEntries = computed(() => {
             class="bg-emerald-600 text-white text-sm rounded-md px-3 py-1.5 hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             :disabled="refillAmount <= 0"
           >
-            Add refill
+            {{ $t('medication.refill') }}
           </button>
         </form>
       </div>
 
       <!-- Recount -->
       <div class="bg-white rounded-lg border border-gray-200 px-5 py-4">
-        <h2 class="font-medium text-gray-900 mb-3">Recount</h2>
+        <h2 class="font-medium text-gray-900 mb-3">{{ $t('medication.recount') }}</h2>
         <form @submit.prevent="handleBaseline" class="flex flex-col gap-2">
           <input
             type="number"
@@ -198,7 +216,7 @@ const logEntries = computed(() => {
           <input
             type="text"
             v-model.trim="baselineNote"
-            placeholder="Note (optional)"
+            :placeholder="t('medication.note')"
             class="border border-gray-200 rounded-md px-3 py-1.5 text-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           <button
@@ -206,7 +224,7 @@ const logEntries = computed(() => {
             class="bg-amber-500 text-white text-sm rounded-md px-3 py-1.5 hover:bg-amber-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             :disabled="baselineAmount < 0"
           >
-            Set baseline
+            {{ $t('medication.setBaseline') }}
           </button>
         </form>
       </div>
@@ -222,7 +240,7 @@ const logEntries = computed(() => {
         class="flex items-center gap-1.5 text-sm text-gray-600 hover:text-gray-900 border border-gray-200 rounded-md px-3 py-1.5 transition-colors"
       >
         <Pencil class="w-4 h-4" />
-        Edit
+        {{ $t('medication.editButton') }}
       </RouterLink>
 
       <button
@@ -231,7 +249,7 @@ const logEntries = computed(() => {
         class="flex items-center gap-1.5 text-sm text-amber-500 hover:text-amber-600 border border-amber-200 rounded-md px-3 py-1.5 transition-colors"
       >
         <Bell class="w-4 h-4" />
-        Unsnooze
+        {{ $t('medication.unsnooze') }}
       </button>
 
       <button
@@ -240,7 +258,7 @@ const logEntries = computed(() => {
         class="flex items-center gap-1.5 text-sm text-amber-500 hover:text-amber-600 border border-amber-200 rounded-md px-3 py-1.5 transition-colors"
       >
         <BellOff class="w-4 h-4" />
-        Snooze
+        {{ $t('medication.snooze') }}
       </button>
 
       <button
@@ -253,7 +271,7 @@ const logEntries = computed(() => {
         "
       >
         <Trash2 class="w-4 h-4" />
-        {{ confirmDelete ? 'Confirm delete?' : 'Delete' }}
+        {{ confirmDelete ? $t('medication.confirmDelete') : $t('medication.delete') }}
       </button>
     </div>
     <h2 class="font-medium text-gray-900 mb-3">History</h2>
@@ -268,7 +286,7 @@ const logEntries = computed(() => {
                 : 'bg-amber-100 text-amber-700'
             "
           >
-            {{ l.kind }}
+            {{ $t(`medication.action.${l.kind}`) }}
           </span>
           <div class="flex flex-col">
             <span class="text-sm text-gray-500">{{ l.date }}</span>
@@ -277,7 +295,7 @@ const logEntries = computed(() => {
         </div>
         <span class="text-sm font-medium text-gray-900"
           >{{ l.kind === 'refill' ? '+ ' : '' }}{{ formatAmount(l.amount) }}
-          {{ medication.unit }}</span
+          {{ formatUnit(l.amount, medication.unit, medication.unitSingular) }}</span
         >
       </div>
     </div>

@@ -17,6 +17,6 @@ const handleLogin = () => {
     class="text-sm text-gray-500 hover:text-gray-700 transition-colors cursor-pointer"
     @click="handleLogin"
   >
-    Log In
+    {{ $t('navigation.login') }}
   </button>
 </template>

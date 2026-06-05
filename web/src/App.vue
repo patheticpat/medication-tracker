@@ -27,7 +27,7 @@ function handleLogoClick() {
           @click="handleLogoClick"
           class="font-bold text-xl text-gray-900 hover:text-gray-700 transition-colors cursor-pointer"
         >
-          <span class="font-semibold text-gray-800">💊 Medication Tracker</span>
+          <span class="font-semibold text-gray-800">💊 {{ $t('strings.app') }}</span>
         </button>
         <div class="flex items-center gap-4">
           <RouterLink
@@ -35,7 +35,7 @@ function handleLogoClick() {
             class="text-sm text-gray-500 hover:text-gray-700 transition-colors"
             v-if="isAuthenticated"
           >
-            Settings
+            {{ $t('navigation.settings') }}
           </RouterLink>
           <LoginButton v-if="!isAuthenticated" />
           <LogoutButton v-if="isAuthenticated" />
