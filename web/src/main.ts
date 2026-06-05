@@ -116,7 +116,24 @@ const messages = {
     },
   },
 }
-const i18n = createI18n({ locale: 'de', messages })
+const i18n = createI18n({
+  locale: 'de',
+  messages,
+  numberFormats: {
+    de: {
+      decimal: {
+        style: 'decimal',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 1,
+      },
+      dosage: {
+        style: 'decimal',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 6,
+      },
+    },
+  },
+})
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js')

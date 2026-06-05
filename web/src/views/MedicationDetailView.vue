@@ -6,13 +6,13 @@ import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Trash2, Pencil, Bell, BellOff } from 'lucide-vue-next'
 import EditMedicationModal from '@/components/EditMedicationModal.vue'
-import { formatAmount, formatUnit } from '@/utils/format'
+import { formatUnit, parseDate } from '@/utils/format'
 import ClipboardButton from '@/components/ClipboardButton.vue'
 import { useToast } from '@/composables/useToast'
 import { useApi } from '@/composables/useApi'
 import { useI18n } from 'vue-i18n'
 
-const { t } = useI18n()
+const { n, t } = useI18n()
 
 const router = useRouter()
 const route = useRoute()
@@ -90,23 +90,11 @@ const refillNote = ref('')
 const baselineAmount = ref(0)
 const baselineNote = ref('')
 
-const _schedulek = computed(() => {
-  if (!medication.value) return ''
-  const m = medication.value
-  const dosage = `${m.schedule.amount} ${formatUnit(m.schedule.amount, m.unit, m.unitSingular)}`
-  if (m.schedule.kind === 'weekly') {
-    const weekdays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
-    const day = weekdays[m.schedule.dayOfWeek]
-    return `${dosage} per week (every ${day})`
-  } else {
-    return `${dosage} per day`
-  }
-})
-
 const schedule = computed(() => {
   if (!medication.value) return ''
   const m = medication.value
-  const dosage = `${m.schedule.amount} ${formatUnit(m.schedule.amount, m.unit, m.unitSingular)}`
+  const amount = n(m.schedule.amount, 'dosage')
+  const dosage = `${amount} ${formatUnit(m.schedule.amount, m.unit, m.unitSingular)}`
   if (m.schedule.kind === 'daily') {
     return t('medication.dailyDose', { dosage })
   } else {
@@ -147,7 +135,7 @@ const logEntries = computed(() => {
       <div class="flex justify-between items-center">
         <span class="text-gray-500 text-sm">{{ $t('medication.stock') }}</span>
         <span class="font-medium text-gray-900"
-          >{{ formatAmount(medication.stock) }}
+          >{{ $n(medication.stock, 'decimal') }}
           {{ formatUnit(medication.stock, medication.unit, medication.unitSingular) }}</span
         >
       </div>
@@ -169,7 +157,7 @@ const logEntries = computed(() => {
       <div class="flex justify-between items-center mt-2">
         <span class="text-gray-500 text-sm">{{ $t('medication.threshold') }}</span>
         <span class="font-medium text-gray-900"
-          >{{ formatAmount(medication.warningThreshold) }}
+          >{{ $n(medication.warningThreshold, 'decimal') }}
           {{ $t('strings.day', medication.warningThreshold) }}</span
         >
       </div>
@@ -289,12 +277,14 @@ const logEntries = computed(() => {
             {{ $t(`medication.action.${l.kind}`) }}
           </span>
           <div class="flex flex-col">
-            <span class="text-sm text-gray-500">{{ l.date }}</span>
+            <span class="text-sm text-gray-500">{{
+              $d(parseDate(l.date), { dateStyle: 'long' })
+            }}</span>
             <span v-if="l.note" class="text-xs text-gray-400">{{ l.note }}</span>
           </div>
         </div>
         <span class="text-sm font-medium text-gray-900"
-          >{{ l.kind === 'refill' ? '+ ' : '' }}{{ formatAmount(l.amount) }}
+          >{{ l.kind === 'refill' ? '+ ' : '' }}{{ $n(l.amount, 'decimal') }}
           {{ formatUnit(l.amount, medication.unit, medication.unitSingular) }}</span
         >
       </div>

@@ -5,7 +5,7 @@ import { computed } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { ArrowUpDown, Bell, BellOff } from 'lucide-vue-next'
 import AddMedicationModal from '@/components/AddMedicationModal.vue'
-import { formatAmount, formatUnit } from '@/utils/format'
+import { formatUnit } from '@/utils/format'
 import type { MedicationWithStats } from '@/types/medication'
 import ClipboardButton from '@/components/ClipboardButton.vue'
 import SnoozeButton from '@/components/SnoozeButton.vue'
@@ -142,7 +142,7 @@ const snoozeAll = () => {
             </div>
           </div>
           <div class="mt-1 mb-3 text-sm text-gray-500">
-            <span class="text-lg mr-1">{{ formatAmount(medication.stock) }}</span>
+            <span class="text-lg mr-1">{{ $n(medication.stock, 'decimal') }}</span>
             {{ formatUnit(medication.stock, medication.unit, medication.unitSingular) }}
             {{ $t('dashboard.remaining') }}
           </div>
