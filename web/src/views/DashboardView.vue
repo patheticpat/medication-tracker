@@ -3,7 +3,7 @@ import { useMedications, useUpdateSnooze } from '@/stores/medications'
 import { useUI } from '@/stores/ui'
 import { computed } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
-import { ArrowUpDown, Bell, BellOff } from 'lucide-vue-next'
+import { ArrowUpDown, Bell, BellOff, AlertTriangle } from 'lucide-vue-next'
 import AddMedicationModal from '@/components/AddMedicationModal.vue'
 import { formatUnit } from '@/utils/format'
 import type { MedicationWithStats } from '@/types/medication'
@@ -83,8 +83,9 @@ const snoozeAll = () => {
       v-if="filteredMedications.length > 0"
       class="bg-red-50 border border-red-200 rounded-lg px-4 py-2 mb-6"
     >
-      <div class="flex items-center justify-between mb-4">
-        <span class="font-medium text-red-800">{{ $t('dashboard.runningLow') }}</span>
+      <div class="flex items-center justify-start mb-4">
+        <AlertTriangle class="text-red-800 me-2" />
+        <span class="font-bold text-red-800"> {{ $t('dashboard.runningLow') }}</span>
       </div>
       <p class="text-sm text-red-700 mb-4">
         {{ filteredMedications.map((m) => `${m.name} (${m.daysRemaining}d)`).join(' · ') }}
