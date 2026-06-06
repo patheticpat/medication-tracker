@@ -11,6 +11,7 @@ import ClipboardButton from '@/components/ClipboardButton.vue'
 import SnoozeButton from '@/components/SnoozeButton.vue'
 import { storeToRefs } from 'pinia'
 import { useToast } from '@/composables/useToast'
+import { useI18n } from 'vue-i18n'
 
 const route = useRoute()
 const router = useRouter()
@@ -22,6 +23,7 @@ const { toggleSortOrder } = uiStore
 const { sortOrder } = storeToRefs(uiStore)
 
 const { addToast } = useToast()
+const { t } = useI18n()
 
 const filteredMedications = computed(() =>
   [...(data.value ?? [])]
@@ -62,7 +64,7 @@ const clipboardText = computed(() =>
 const snoozeAll = () => {
   const count = filteredMedications.value.length
   filteredMedications.value.forEach((m) => updateSnooze({ id: m.id, snoozed: true }))
-  addToast(`${count} medications snoozed`, 'info')
+  addToast(t('dashboard.medicationsSnoozed', { count }), 'info')
 }
 </script>
 
@@ -71,7 +73,7 @@ const snoozeAll = () => {
     <div class="w-8 h-8 border-4 border-gray-200 border-t-blue-500 rounded-full animate-spin" />
   </div>
   <div v-else-if="error" class="text-center py-12 text-gray-500">
-    Something went wrong. Please try again later.
+    {{ $t('strings.error') }}
   </div>
   <div v-else-if="sortedMedications.length === 0" class="text-center py-12 text-gray-400">
     {{ $t('dashboard.noMedications') }}

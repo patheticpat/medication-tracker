@@ -81,9 +81,9 @@ const handleSaveSettings = async () => {
       notificationHour: notificationHour.value,
       notificationDays: notificationDays.value.sort().join(','),
     })
-    addToast('Notification settings saved', 'success')
+    addToast(t('settings.saved'), 'success')
   } catch {
-    addToast('Failed to save settings', 'error')
+    addToast(t('settings.saveFailed'), 'error')
   }
 }
 

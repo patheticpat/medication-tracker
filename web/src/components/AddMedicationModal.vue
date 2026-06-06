@@ -25,8 +25,8 @@ const cache = useQueryCache()
 
 const { mutateAsync, isLoading } = useMutation({
   mutation: createMedication,
-  onSuccess: (medication) => addToast(`${medication.name} added`, 'success'),
-  onError: () => addToast('Failed to add medication', 'error'),
+  onSuccess: (medication) => addToast(t('medication.added', { name: medication.name }), 'success'),
+  onError: () => addToast(t('medication.addFailed'), 'error'),
   onSettled: () => cache.invalidateQueries({ key: MEDICATION_KEYS.root }),
 })
 

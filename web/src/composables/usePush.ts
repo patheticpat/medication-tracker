@@ -1,4 +1,5 @@
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useApi } from './useApi'
 import { useToast } from './useToast'
 
@@ -12,6 +13,7 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array<ArrayBuffer> {
 export function usePush() {
   const { getVapidPublicKey, subscribePush, testPush, unsubscribePush } = useApi()
   const { addToast } = useToast()
+  const { t } = useI18n()
   const isLoading = ref(false)
   const error = ref<string | null>(null)
   const isSubscribed = ref(false)
@@ -46,10 +48,10 @@ export function usePush() {
       })
       await subscribePush(subscription.toJSON())
       isSubscribed.value = true
-      addToast('Notifications enabled', 'success')
+      addToast(t('settings.notificationsEnabled'), 'success')
     } catch (e) {
-      error.value = e instanceof Error ? e.message : 'Unbekannter Fehler'
-      addToast('Failed to enable notifications', 'error')
+      error.value = e instanceof Error ? e.message : t('strings.unknownError')
+      addToast(t('settings.notificationsEnableFailed'), 'error')
     } finally {
       isLoading.value = false
     }
@@ -66,11 +68,11 @@ export function usePush() {
         await unsubscribePush(subscription.endpoint)
         await subscription.unsubscribe()
         isSubscribed.value = false
-        addToast('Notifications disabled', 'success')
+        addToast(t('settings.notificationsDisabled'), 'success')
       }
     } catch (e) {
-      error.value = e instanceof Error ? e.message : 'Unbekannter Fehler'
-      addToast('Failed to disable notifications', 'error')
+      error.value = e instanceof Error ? e.message : t('strings.unknownError')
+      addToast(t('settings.notificationsDisableFailed'), 'error')
     } finally {
       isLoading.value = false
     }
@@ -85,10 +87,10 @@ export function usePush() {
       const subscription = await registration.pushManager.getSubscription()
       if (!subscription) return
       await testPush(subscription.endpoint)
-      addToast('Test notification sent', 'success')
+      addToast(t('settings.testNotificationSent'), 'success')
     } catch (e) {
-      error.value = e instanceof Error ? e.message : 'Unbekannter Fehler'
-      addToast('Failed to send test notification', 'error')
+      error.value = e instanceof Error ? e.message : t('strings.unknownError')
+      addToast(t('settings.testNotificationFailed'), 'error')
     } finally {
       isLoading.value = false
     }

@@ -36,7 +36,7 @@ const { mutateAsync: deleteAsync } = useMutation({
 const { mutateAsync: createLogAsync } = useMutation({
   mutation: (log: CreateLogEntry) => createLogEntry(route.params.id as string, log),
   onSuccess: (updatedMedication, log) => {
-    addToast(log.kind === 'refill' ? 'Refill logged' : 'Stock updated', 'success')
+    addToast(log.kind === 'refill' ? t('medication.refillLogged') : t('medication.stockUpdated'), 'success')
     cache.setQueryData(MEDICATION_KEYS.byId(updatedMedication.id), updatedMedication)
     const { logs: _, ...medicationWithoutLogs } = updatedMedication
     cache.setQueryData(MEDICATION_KEYS.root, (medications?: MedicationWithStats[]) =>
@@ -57,11 +57,11 @@ const handleDelete = async () => {
   }
   try {
     await deleteAsync()
-    addToast(`${medication.value!.name} deleted`, 'success')
+    addToast(t('medication.deleted', { name: medication.value!.name }), 'success')
     await router.replace({ name: 'dashboard' })
     cache.invalidateQueries({ key: MEDICATION_KEYS.root })
   } catch {
-    addToast(`Failed to delete ${medication.value!.name}`, 'error')
+    addToast(t('medication.deleteFailed', { name: medication.value!.name }), 'error')
   }
 }
 
@@ -115,7 +115,7 @@ const logEntries = computed(() => {
     <div class="w-8 h-8 border-4 border-gray-200 border-t-blue-500 rounded-full animate-spin" />
   </div>
   <div v-else-if="error" class="text-center py-12 text-gray-500">
-    Something went wrong. Please try again later.
+    {{ $t('strings.error') }}
   </div>
 
   <div v-else-if="medication">
@@ -262,7 +262,7 @@ const logEntries = computed(() => {
         {{ confirmDelete ? $t('medication.confirmDelete') : $t('medication.delete') }}
       </button>
     </div>
-    <h2 class="font-medium text-gray-900 mb-3">History</h2>
+    <h2 class="font-medium text-gray-900 mb-3">{{ $t('medication.history') }}</h2>
     <div class="bg-white rounded-lg border border-gray-200 divide-y divide-gray-100">
       <div v-for="l in logEntries" :key="l.id" class="px-5 py-3 flex items-center justify-between">
         <div class="flex items-center gap-3">
