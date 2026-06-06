@@ -22,6 +22,64 @@ use crate::{
     },
 };
 
+fn schedule_from_row(row: &DbMedicationWithLogRow) -> Result<Schedule, AppError> {
+    match row.schedule_kind.as_str() {
+        "daily" => Ok(Schedule::Daily {
+            amount: row.schedule_amount,
+        }),
+        "weekly" => Ok(Schedule::Weekly {
+            day_of_week: row
+                .schedule_day_of_week
+                .ok_or_eyre("missing day_of_week")?
+                .try_into()
+                .map_err(|_| AppError::InternalError)?,
+            amount: row.schedule_amount,
+        }),
+        _ => Err(AppError::InternalError),
+    }
+}
+
+fn medication_from_row(row: &DbMedicationWithLogRow) -> Result<Medication, AppError> {
+    Ok(Medication {
+        id: Uuid::parse_str(&row.id).map_err(|_| AppError::InternalError)?,
+        name: row.name.clone(),
+        unit: row.unit.clone(),
+        unit_singular: row.unit_singular.clone(),
+        schedule: schedule_from_row(row)?,
+        warning_threshold: row
+            .warning_threshold
+            .try_into()
+            .map_err(|_| AppError::InternalError)?,
+        snoozed: row.snoozed,
+        logs: Some(Vec::new()),
+    })
+}
+
+fn log_entry_from_row(row: DbMedicationWithLogRow) -> Result<Option<LogEntry>, AppError> {
+    let (Some(kind), Some(amount), Some(date)) = (row.log_kind, row.log_amount, row.log_date)
+    else {
+        return Ok(None);
+    };
+    let id = Uuid::parse_str(row.log_id.ok_or_eyre("missing log id")?.as_str())
+        .map_err(|_| AppError::InternalError)?;
+    let log = match kind.as_str() {
+        "baseline" => LogEntry::Baseline {
+            id,
+            amount,
+            date,
+            note: row.log_note,
+        },
+        "refill" => LogEntry::Refill {
+            id,
+            amount,
+            date,
+            note: row.log_note,
+        },
+        _ => return Err(AppError::InternalError),
+    };
+    Ok(Some(log))
+}
+
 pub async fn get_all_medications_with_logs(
     pool: &SqlitePool,
     user_id: &str,
@@ -52,60 +110,15 @@ pub async fn get_all_medications_with_logs(
     .await?;
 
     let mut medications: Vec<Medication> = Vec::new();
-    let mut current_id = String::new();
 
     for row in rows {
-        if row.id != current_id {
-            current_id = row.id.clone();
-            let medication = Medication {
-                id: Uuid::parse_str(&row.id).map_err(|_| AppError::InternalError)?,
-                name: row.name,
-                unit: row.unit,
-                unit_singular: row.unit_singular,
-                schedule: match row.schedule_kind.as_str() {
-                    "daily" => Schedule::Daily {
-                        amount: row.schedule_amount,
-                    },
-                    "weekly" => Schedule::Weekly {
-                        day_of_week: row
-                            .schedule_day_of_week
-                            .ok_or_eyre("missing day_of_week")?
-                            .try_into()
-                            .map_err(|_| AppError::InternalError)?,
-                        amount: row.schedule_amount,
-                    },
-                    _ => return Err(AppError::InternalError),
-                },
-                warning_threshold: row
-                    .warning_threshold
-                    .try_into()
-                    .map_err(|_| AppError::InternalError)?,
-                snoozed: row.snoozed,
-                logs: Some(Vec::new()),
-            };
-            medications.push(medication);
-        }
-
-        if let (Some(kind), Some(amount), Some(date)) = (row.log_kind, row.log_amount, row.log_date)
+        if medications
+            .last()
+            .map_or(true, |m| m.id.to_string() != row.id)
         {
-            let id = row.log_id.ok_or_eyre("missing log id")?;
-            let id = Uuid::parse_str(&id).map_err(|_| AppError::InternalError)?;
-            let note = row.log_note;
-            let log = match kind.as_str() {
-                "baseline" => LogEntry::Baseline {
-                    id,
-                    amount,
-                    date,
-                    note,
-                },
-                "refill" => LogEntry::Refill {
-                    id,
-                    amount,
-                    date,
-                    note,
-                },
-                _ => return Err(AppError::InternalError),
-            };
+            medications.push(medication_from_row(&row)?);
+        }
+        if let Some(log) = log_entry_from_row(row)? {
             medications
                 .last_mut()
                 .unwrap()
@@ -149,69 +162,18 @@ async fn get_medication_with_logs(
     )
     .fetch_all(pool)
     .await?;
-    let count = rows.len();
-    let mut rows = rows.into_iter().peekable();
 
-    let medication = if let Some(row) = rows.peek() {
-        Medication {
-            id: Uuid::parse_str(&row.id).map_err(|_| AppError::InternalError)?,
-            name: row.name.clone(),
-            unit: row.unit.clone(),
-            unit_singular: row.unit_singular.clone(),
-            schedule: match row.schedule_kind.as_str() {
-                "daily" => Schedule::Daily {
-                    amount: row.schedule_amount,
-                },
-                "weekly" => Schedule::Weekly {
-                    day_of_week: row
-                        .schedule_day_of_week
-                        .ok_or_eyre("missing day_of_week")?
-                        .try_into()
-                        .map_err(|_| AppError::InternalError)?,
-                    amount: row.schedule_amount,
-                },
-                _ => return Err(AppError::InternalError),
-            },
-            warning_threshold: row
-                .warning_threshold
-                .try_into()
-                .map_err(|_| AppError::InternalError)?,
-            snoozed: row.snoozed,
-            logs: None,
-        }
-    } else {
-        return Err(AppError::NotFound);
-    };
-    let mut logs = Vec::with_capacity(count);
+    let mut rows = rows.into_iter();
+    let first = rows.next().ok_or(AppError::NotFound)?;
+    let mut medication = medication_from_row(&first)?;
 
-    for row in rows {
-        if let (Some(kind), Some(amount), Some(date)) = (row.log_kind, row.log_amount, row.log_date)
-        {
-            let id = row.log_id.ok_or_eyre("missing log id")?;
-            let id = Uuid::parse_str(&id).map_err(|_| AppError::InternalError)?;
-            let note = row.log_note;
-            let log = match kind.as_str() {
-                "baseline" => LogEntry::Baseline {
-                    id,
-                    amount,
-                    date,
-                    note,
-                },
-                "refill" => LogEntry::Refill {
-                    id,
-                    amount,
-                    date,
-                    note,
-                },
-                _ => return Err(AppError::InternalError),
-            };
-            logs.push(log);
-        }
-    }
-    Ok(Medication {
-        logs: Some(logs),
-        ..medication
-    })
+    let logs = std::iter::once(first)
+        .chain(rows)
+        .filter_map(|row| log_entry_from_row(row).transpose())
+        .collect::<Result<Vec<_>, _>>()?;
+
+    medication.logs = Some(logs);
+    Ok(medication)
 }
 
 pub async fn list_medications(
@@ -537,4 +499,211 @@ pub async fn create_log_entry(
         stock,
         days_remaining,
     }))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use chrono::NaiveDate;
+
+    fn base_row() -> DbMedicationWithLogRow {
+        DbMedicationWithLogRow {
+            id: "00000000-0000-0000-0000-000000000001".to_string(),
+            user_id: "user1".to_string(),
+            name: "Aspirin".to_string(),
+            unit: "tablets".to_string(),
+            unit_singular: Some("tablet".to_string()),
+            schedule_kind: "daily".to_string(),
+            schedule_amount: 1.0,
+            schedule_day_of_week: None,
+            warning_threshold: 5,
+            snoozed: false,
+            log_id: None,
+            log_kind: None,
+            log_amount: None,
+            log_date: None,
+            log_note: None,
+        }
+    }
+
+    // --- schedule_from_row ---
+
+    #[test]
+    fn schedule_daily() {
+        let schedule = schedule_from_row(&base_row()).unwrap();
+        assert!(matches!(schedule, Schedule::Daily { amount } if amount == 1.0));
+    }
+
+    #[test]
+    fn schedule_weekly() {
+        let row = DbMedicationWithLogRow {
+            schedule_kind: "weekly".to_string(),
+            schedule_amount: 2.0,
+            schedule_day_of_week: Some(3),
+            ..base_row()
+        };
+        let schedule = schedule_from_row(&row).unwrap();
+        assert!(matches!(
+            schedule,
+            Schedule::Weekly { day_of_week: 3, amount } if amount == 2.0
+        ));
+    }
+
+    #[test]
+    fn schedule_weekly_missing_day_of_week_errors() {
+        let row = DbMedicationWithLogRow {
+            schedule_kind: "weekly".to_string(),
+            schedule_day_of_week: None,
+            ..base_row()
+        };
+        assert!(schedule_from_row(&row).is_err());
+    }
+
+    #[test]
+    fn schedule_unknown_kind_errors() {
+        let row = DbMedicationWithLogRow {
+            schedule_kind: "monthly".to_string(),
+            ..base_row()
+        };
+        assert!(schedule_from_row(&row).is_err());
+    }
+
+    // --- medication_from_row ---
+
+    #[test]
+    fn medication_from_valid_daily_row() {
+        let med = medication_from_row(&base_row()).unwrap();
+        assert_eq!(med.name, "Aspirin");
+        assert_eq!(med.unit, "tablets");
+        assert_eq!(med.unit_singular, Some("tablet".to_string()));
+        assert_eq!(med.warning_threshold, 5);
+        assert!(!med.snoozed);
+        assert!(matches!(med.logs, Some(ref v) if v.is_empty()));
+    }
+
+    #[test]
+    fn medication_from_valid_weekly_row() {
+        let row = DbMedicationWithLogRow {
+            schedule_kind: "weekly".to_string(),
+            schedule_day_of_week: Some(1),
+            ..base_row()
+        };
+        let med = medication_from_row(&row).unwrap();
+        assert!(matches!(
+            med.schedule,
+            Schedule::Weekly { day_of_week: 1, .. }
+        ));
+    }
+
+    #[test]
+    fn medication_from_row_invalid_uuid_errors() {
+        let row = DbMedicationWithLogRow {
+            id: "not-a-uuid".to_string(),
+            ..base_row()
+        };
+        assert!(medication_from_row(&row).is_err());
+    }
+
+    #[test]
+    fn medication_from_row_negative_warning_threshold_errors() {
+        let row = DbMedicationWithLogRow {
+            warning_threshold: -1,
+            ..base_row()
+        };
+        assert!(medication_from_row(&row).is_err());
+    }
+
+    // --- log_entry_from_row ---
+
+    #[test]
+    fn log_entry_no_log_fields_returns_none() {
+        assert!(log_entry_from_row(base_row()).unwrap().is_none());
+    }
+
+    #[test]
+    fn log_entry_partial_log_fields_returns_none() {
+        let row = DbMedicationWithLogRow {
+            log_kind: Some("baseline".to_string()),
+            ..base_row()
+        };
+        assert!(log_entry_from_row(row).unwrap().is_none());
+    }
+
+    #[test]
+    fn log_entry_baseline() {
+        let log_id = Uuid::now_v7().to_string();
+        let date = NaiveDate::from_ymd_opt(2024, 1, 15).unwrap();
+        let row = DbMedicationWithLogRow {
+            log_id: Some(log_id),
+            log_kind: Some("baseline".to_string()),
+            log_amount: Some(10.0),
+            log_date: Some(date),
+            log_note: Some("initial".to_string()),
+            ..base_row()
+        };
+        let log = log_entry_from_row(row).unwrap().unwrap();
+        assert!(matches!(
+            log,
+            LogEntry::Baseline { amount, date: d, note: Some(ref n), .. }
+            if amount == 10.0 && d == date && n == "initial"
+        ));
+    }
+
+    #[test]
+    fn log_entry_refill_no_note() {
+        let date = NaiveDate::from_ymd_opt(2024, 3, 1).unwrap();
+        let row = DbMedicationWithLogRow {
+            log_id: Some(Uuid::now_v7().to_string()),
+            log_kind: Some("refill".to_string()),
+            log_amount: Some(30.0),
+            log_date: Some(date),
+            log_note: None,
+            ..base_row()
+        };
+        let log = log_entry_from_row(row).unwrap().unwrap();
+        assert!(matches!(
+            log,
+            LogEntry::Refill { amount, date: d, note: None, .. }
+            if amount == 30.0 && d == date
+        ));
+    }
+
+    #[test]
+    fn log_entry_missing_log_id_errors() {
+        let date = NaiveDate::from_ymd_opt(2024, 1, 1).unwrap();
+        let row = DbMedicationWithLogRow {
+            log_id: None,
+            log_kind: Some("baseline".to_string()),
+            log_amount: Some(5.0),
+            log_date: Some(date),
+            ..base_row()
+        };
+        assert!(log_entry_from_row(row).is_err());
+    }
+
+    #[test]
+    fn log_entry_invalid_log_uuid_errors() {
+        let date = NaiveDate::from_ymd_opt(2024, 1, 1).unwrap();
+        let row = DbMedicationWithLogRow {
+            log_id: Some("bad-uuid".to_string()),
+            log_kind: Some("baseline".to_string()),
+            log_amount: Some(5.0),
+            log_date: Some(date),
+            ..base_row()
+        };
+        assert!(log_entry_from_row(row).is_err());
+    }
+
+    #[test]
+    fn log_entry_unknown_kind_errors() {
+        let date = NaiveDate::from_ymd_opt(2024, 1, 1).unwrap();
+        let row = DbMedicationWithLogRow {
+            log_id: Some(Uuid::now_v7().to_string()),
+            log_kind: Some("unknown".to_string()),
+            log_amount: Some(5.0),
+            log_date: Some(date),
+            ..base_row()
+        };
+        assert!(log_entry_from_row(row).is_err());
+    }
 }
