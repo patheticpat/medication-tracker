@@ -61,6 +61,7 @@ const handleSubmit = async () => {
       unitSingular.value && unitSingular.value.length > 0 ? unitSingular.value : undefined,
     warningThreshold: warningThreshold.value,
     initialStock: initialStock.value,
+    initialNote: t('medication.initialStock'),
     schedule,
   })
   router.back()

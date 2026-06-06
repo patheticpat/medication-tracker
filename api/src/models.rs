@@ -43,6 +43,8 @@ pub struct CreateMedicationRequest {
     pub warning_threshold: u16,
     #[validate(range(exclusive_min = 0.0))]
     pub initial_stock: f64,
+    #[validate(length(min = 1))]
+    pub initial_note: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Validate)]

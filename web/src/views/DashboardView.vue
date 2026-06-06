@@ -79,18 +79,18 @@ const snoozeAll = () => {
   <div v-else>
     <div
       v-if="filteredMedications.length > 0"
-      class="bg-red-50 border border-red-200 rounded-lg px-5 py-4 mb-6"
+      class="bg-red-50 border border-red-200 rounded-lg px-4 py-2 mb-6"
     >
-      <div class="flex items-center justify-between mb-3">
+      <div class="flex items-center justify-between mb-4">
         <span class="font-medium text-red-800">{{ $t('dashboard.runningLow') }}</span>
-        <div class="flex items-center gap-2">
-          <SnoozeButton @snooze="snoozeAll" />
-          <ClipboardButton :text="clipboardText" />
-        </div>
       </div>
-      <p class="text-sm text-red-700">
+      <p class="text-sm text-red-700 mb-4">
         {{ filteredMedications.map((m) => `${m.name} (${m.daysRemaining}d)`).join(' · ') }}
       </p>
+      <div class="flex items-center gap-2 justify-end">
+        <SnoozeButton @snooze="snoozeAll" />
+        <ClipboardButton :text="clipboardText" />
+      </div>
     </div>
 
     <div class="flex items-center justify-between mb-4">

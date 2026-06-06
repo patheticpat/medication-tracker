@@ -120,9 +120,9 @@ const logEntries = computed(() => {
 
   <div v-else-if="medication">
     <!-- Header -->
-    <div class="flex items-start justify-between mb-6">
+    <div class="mb-6">
       <div>
-        <div class="flex items-center gap-2">
+        <div class="flex items-center justify-between gap-2">
           <h1 class="text-2xl font-bold text-gray-900">{{ medication.name }}</h1>
           <ClipboardButton :text="medication.name" />
         </div>
@@ -185,7 +185,7 @@ const logEntries = computed(() => {
             class="bg-emerald-600 text-white text-sm rounded-md px-3 py-1.5 hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             :disabled="refillAmount <= 0"
           >
-            {{ $t('medication.refill') }}
+            {{ $t('strings.save') }}
           </button>
         </form>
       </div>
@@ -212,7 +212,7 @@ const logEntries = computed(() => {
             class="bg-amber-500 text-white text-sm rounded-md px-3 py-1.5 hover:bg-amber-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             :disabled="baselineAmount < 0"
           >
-            {{ $t('medication.setBaseline') }}
+            {{ $t('strings.save') }}
           </button>
         </form>
       </div>
@@ -225,7 +225,7 @@ const logEntries = computed(() => {
           params: { id: medication.id },
           query: { edit: 'true' },
         }"
-        class="flex items-center gap-1.5 text-sm text-gray-600 hover:text-gray-900 border border-gray-200 rounded-md px-3 py-1.5 transition-colors"
+        class="flex items-center gap-1.5 text-sm text-gray-600 hover:bg-gray-100 border border-gray-200 rounded-md px-3 py-1.5 transition-colors"
       >
         <Pencil class="w-4 h-4" />
         {{ $t('medication.editButton') }}
@@ -234,7 +234,7 @@ const logEntries = computed(() => {
       <button
         v-if="medication.snoozed && medication.daysRemaining <= medication.warningThreshold"
         @click="updateSnooze({ id: medication.id, snoozed: false })"
-        class="flex items-center gap-1.5 text-sm text-amber-500 hover:text-amber-600 border border-amber-200 rounded-md px-3 py-1.5 transition-colors"
+        class="flex items-center gap-1.5 text-sm text-amber-500 border border-amber-200 hover:bg-amber-50 rounded-md px-3 py-1.5 transition-colors"
       >
         <Bell class="w-4 h-4" />
         {{ $t('medication.unsnooze') }}
@@ -243,7 +243,7 @@ const logEntries = computed(() => {
       <button
         v-if="!medication.snoozed && medication.daysRemaining <= medication.warningThreshold"
         @click="updateSnooze({ id: medication.id, snoozed: true })"
-        class="flex items-center gap-1.5 text-sm text-amber-500 hover:text-amber-600 border border-amber-200 rounded-md px-3 py-1.5 transition-colors"
+        class="flex items-center gap-1.5 text-sm text-amber-500 border border-amber-200 hover:bg-amber-50 rounded-md px-3 py-1.5 transition-colors"
       >
         <BellOff class="w-4 h-4" />
         {{ $t('medication.snooze') }}

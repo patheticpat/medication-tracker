@@ -294,7 +294,7 @@ pub async fn create_medication(
         "baseline",
         body.initial_stock,
         at,
-        Some("Initial baseline")
+        body.initial_note
     )
     .execute(&mut *tx)
     .await?;

@@ -5,8 +5,9 @@ import { useAuth0 } from '@auth0/auth0-vue'
 import ToastContainer from './components/ToastContainer.vue'
 import LoginButton from './components/buttons/LoginButton.vue'
 import LogoutButton from './components/buttons/LogoutButton.vue'
+import { Settings2 } from 'lucide-vue-next'
 
-const { isAuthenticated } = useAuth0()
+const { isAuthenticated, isLoading } = useAuth0()
 
 useMidnightRefresh()
 const route = useRoute()
@@ -27,15 +28,15 @@ function handleLogoClick() {
           @click="handleLogoClick"
           class="font-bold text-xl text-gray-900 hover:text-gray-700 transition-colors cursor-pointer"
         >
-          <span class="font-semibold text-gray-800">💊 {{ $t('strings.app') }}</span>
+          💊<span class="font-semibold text-gray-800 ml-3">{{ $t('strings.app') }}</span>
         </button>
-        <div class="flex items-center gap-4">
+        <div v-if="!isLoading" class="flex items-center gap-4">
           <RouterLink
             :to="{ name: 'settings' }"
             class="text-sm text-gray-500 hover:text-gray-700 transition-colors"
             v-if="isAuthenticated"
           >
-            {{ $t('navigation.settings') }}
+            <Settings2 />
           </RouterLink>
           <LoginButton v-if="!isAuthenticated" />
           <LogoutButton v-if="isAuthenticated" />

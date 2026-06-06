@@ -16,6 +16,7 @@ export interface MedicationWithStats extends Medication {
 
 export interface CreateMedication extends Omit<Medication, 'id' | 'logs' | 'snoozed'> {
   initialStock: number
+  initialNote?: string
 }
 
 export type UpdateMedication = Partial<Omit<Medication, 'id' | 'logs'>>
