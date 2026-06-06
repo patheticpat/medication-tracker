@@ -37,9 +37,9 @@ export function useUpdateMedication(id: string) {
 
   return useMutation({
     mutation: (medication: UpdateMedication) => updateMedication(id, medication),
-    onError: () => addToast(t('medication.updateFailed'), 'error'),
-    onSuccess: () => {
-      addToast(t('medication.updated'), 'success')
+    onError: (_error, vars) => addToast(t('medication.updateFailed', { name: vars.name }), 'error'),
+    onSuccess: (data) => {
+      addToast(t('medication.updated', { name: data.name }), 'success')
       cache.invalidateQueries({ key: MEDICATION_KEYS.root })
     },
   })

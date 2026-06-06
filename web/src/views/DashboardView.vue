@@ -64,7 +64,7 @@ const clipboardText = computed(() =>
 const snoozeAll = () => {
   const count = filteredMedications.value.length
   filteredMedications.value.forEach((m) => updateSnooze({ id: m.id, snoozed: true }))
-  addToast(t('dashboard.medicationsSnoozed', { count }), 'info')
+  addToast(t('dashboard.medicationsSnoozed', count), 'info')
 }
 </script>
 

@@ -41,7 +41,7 @@ pub struct CreateMedicationRequest {
     #[validate(nested)]
     pub schedule: Schedule,
     pub warning_threshold: u16,
-    #[validate(range(exclusive_min = 0.0))]
+    #[validate(range(min = 0.0))]
     pub initial_stock: f64,
     #[validate(length(min = 1))]
     pub initial_note: Option<String>,
