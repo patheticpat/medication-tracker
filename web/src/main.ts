@@ -32,6 +32,8 @@ const messages = {
     },
     strings: {
       app: 'Medication Tracker',
+      reload: 'Neu laden',
+      newVersion: 'Neue Version verfügbar',
       day: 'Tag | Tage',
       daysOfWeek: 'Wochentage',
       unknown: 'unbekannt',

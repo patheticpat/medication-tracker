@@ -5,6 +5,11 @@ import { CheckCircle, XCircle, Info, X } from 'lucide-vue-next'
 
 const { removeToast } = useToast()
 const props = defineProps<{ toast: Toast }>()
+
+const onAction = () => {
+  removeToast(props.toast.id)
+  props.toast.action!.onClick()
+}
 </script>
 
 <template>
@@ -21,6 +26,14 @@ const props = defineProps<{ toast: Toast }>()
     <Info v-else class="w-5 h-5 shrink-0 mt-0.5" />
 
     <span class="flex-1 text-sm font-medium">{{ props.toast.message }}</span>
+
+    <button
+      v-if="props.toast.action"
+      @click="onAction"
+      class="shrink-0 text-sm font-semibold underline cursor-pointer"
+    >
+      {{ props.toast.action.label }}
+    </button>
 
     <button
       @click="removeToast(props.toast.id)"

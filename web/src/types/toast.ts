@@ -6,4 +6,5 @@ export interface Toast {
   message: string
   kind: ToastKind
   duration: number // ms
+  action?: { label: string; onClick: () => void }
 }

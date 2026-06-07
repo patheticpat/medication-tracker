@@ -3,10 +3,17 @@ import { ref, readonly } from 'vue'
 
 const toasts = ref<Toast[]>([])
 
-const addToast = (message: string, kind: ToastKind, duration?: number) => {
-  const toast = { id: crypto.randomUUID(), message, kind, duration: duration ?? 4000 }
+const addToast = (
+  message: string,
+  kind: ToastKind,
+  duration?: number,
+  action?: Toast['action'],
+) => {
+  const toast = { id: crypto.randomUUID(), message, kind, duration: duration ?? 4000, action }
   toasts.value = [...toasts.value, toast]
-  setTimeout(() => removeToast(toast.id), toast.duration)
+  if (toast.duration > 0) {
+    setTimeout(() => removeToast(toast.id), toast.duration)
+  }
 }
 
 const removeToast = (id: string) => {

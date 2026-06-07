@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useMidnightRefresh } from './composables/useMidnightRefresh'
+import { useVersionCheck } from './composables/useVersionCheck.ts'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuth0 } from '@auth0/auth0-vue'
 import ToastContainer from './components/ToastContainer.vue'
@@ -10,6 +11,8 @@ import { Settings2 } from 'lucide-vue-next'
 const { isAuthenticated, isLoading } = useAuth0()
 
 useMidnightRefresh()
+useVersionCheck()
+
 const route = useRoute()
 const router = useRouter()
 
