@@ -114,7 +114,7 @@ pub async fn get_all_medications_with_logs(
     for row in rows {
         if medications
             .last()
-            .map_or(true, |m| m.id.to_string() != row.id)
+            .is_none_or(|m| m.id.to_string() != row.id)
         {
             medications.push(medication_from_row(&row)?);
         }
