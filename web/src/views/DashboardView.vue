@@ -171,7 +171,7 @@ const snoozeAll = () => {
   <RouterLink
     v-if="!isLoading && !error"
     :to="{ name: 'dashboard', query: { add: 'true' } }"
-    class="fixed bottom-6 right-6 bg-amber-400 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-[0_4px_14px_rgba(0,0,0,0.25)] hover:bg-amber-500 transition-colors"
+    class="fixed bottom-4 right-4 bg-amber-400 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-[0_4px_14px_rgba(0,0,0,0.25)] hover:bg-amber-500 transition-colors"
   >
     <Plus />
   </RouterLink>
