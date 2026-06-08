@@ -77,11 +77,11 @@ const snoozeAll = () => {
           class="bg-white rounded-lg border border-gray-200 border-t-4 border-t-gray-200 px-5 py-4"
         >
           <div class="flex items-center justify-between mb-3">
-            <div class="h-6 bg-gray-200 rounded w-42" />
+            <div class="h-6 bg-gray-200 rounded w-40" />
             <div class="h-6 bg-gray-200 rounded w-12" />
           </div>
           <div class="flex items-end gap-2 mb-4">
-            <div class="h-4 bg-gray-200 rounded w-54" />
+            <div class="h-4 bg-gray-200 rounded w-52" />
           </div>
           <div class="h-1.5 bg-gray-200 rounded-full" />
         </div>

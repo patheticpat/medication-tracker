@@ -123,16 +123,16 @@ const logEntries = computed(() => {
 
     <!-- Stock Info Card -->
     <div class="bg-white rounded-lg border border-gray-200 px-5 py-4 mb-6">
-      <div class="flex justify-between items-center mt-6 first:mt-0">
+      <div class="flex justify-between items-center mt-0">
         <div class="h-4 bg-gray-200 rounded w-32" />
         <div class="h-4 bg-gray-200 rounded w-20" />
       </div>
-      <div class="flex justify-between items-center mt-6 first:mt-0">
+      <div class="flex justify-between items-center mt-6">
         <div class="h-4 bg-gray-200 rounded w-36" />
-        <div class="h-4 bg-gray-200 rounded w-15" />
+        <div class="h-4 bg-gray-200 rounded w-16" />
       </div>
-      <div class="flex justify-between items-center mt-6 first:mt-0">
-        <div class="h-4 bg-gray-200 rounded w-33" />
+      <div class="flex justify-between items-center mt-6">
+        <div class="h-4 bg-gray-200 rounded w-32" />
         <div class="h-4 bg-gray-200 rounded w-12" />
       </div>
     </div>
