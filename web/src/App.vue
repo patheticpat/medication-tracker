@@ -17,8 +17,8 @@ const route = useRoute()
 const router = useRouter()
 
 function handleLogoClick() {
-  if (route.name !== 'dashboard') {
-    router.replace({ name: 'dashboard' })
+  if (route.name !== 'dashboard' && route.name !== 'home') {
+    router.back()
   }
 }
 </script>
