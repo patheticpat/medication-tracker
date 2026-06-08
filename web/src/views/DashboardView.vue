@@ -69,8 +69,24 @@ const snoozeAll = () => {
 </script>
 
 <template>
-  <div v-if="isLoading" class="flex justify-center py-12">
-    <div class="w-8 h-8 border-4 border-gray-200 border-t-blue-500 rounded-full animate-spin" />
+  <div v-if="isLoading">
+    <div class="h-4 bg-gray-200 rounded w-16 mb-4 animate-pulse" />
+    <ul class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <li v-for="i in 7" :key="i" class="animate-pulse">
+        <div
+          class="bg-white rounded-lg border border-gray-200 border-t-4 border-t-gray-200 px-5 py-4"
+        >
+          <div class="flex items-center justify-between mb-3">
+            <div class="h-6 bg-gray-200 rounded w-42" />
+            <div class="h-6 bg-gray-200 rounded w-12" />
+          </div>
+          <div class="flex items-end gap-2 mb-4">
+            <div class="h-4 bg-gray-200 rounded w-54" />
+          </div>
+          <div class="h-1.5 bg-gray-200 rounded-full" />
+        </div>
+      </li>
+    </ul>
   </div>
   <div v-else-if="error" class="text-center py-12 text-gray-500">
     {{ $t('strings.error') }}

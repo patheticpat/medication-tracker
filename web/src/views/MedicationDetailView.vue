@@ -36,7 +36,10 @@ const { mutateAsync: deleteAsync } = useMutation({
 const { mutateAsync: createLogAsync } = useMutation({
   mutation: (log: CreateLogEntry) => createLogEntry(route.params.id as string, log),
   onSuccess: (updatedMedication, log) => {
-    addToast(log.kind === 'refill' ? t('medication.refillLogged') : t('medication.stockUpdated'), 'success')
+    addToast(
+      log.kind === 'refill' ? t('medication.refillLogged') : t('medication.stockUpdated'),
+      'success',
+    )
     cache.setQueryData(MEDICATION_KEYS.byId(updatedMedication.id), updatedMedication)
     const { logs: _, ...medicationWithoutLogs } = updatedMedication
     cache.setQueryData(MEDICATION_KEYS.root, (medications?: MedicationWithStats[]) =>
@@ -111,9 +114,59 @@ const logEntries = computed(() => {
 </script>
 
 <template>
-  <div v-if="isLoading" class="flex justify-center py-12">
-    <div class="w-8 h-8 border-4 border-gray-200 border-t-blue-500 rounded-full animate-spin" />
+  <div v-if="isLoading" class="animate-pulse">
+    <!-- Header -->
+    <div class="mb-6 flex items-center justify-between">
+      <div class="h-8 bg-gray-200 rounded w-48" />
+    </div>
+    <div class="h-4 bg-gray-200 rounded w-32 -mt-4 mb-6" />
+
+    <!-- Stock Info Card -->
+    <div class="bg-white rounded-lg border border-gray-200 px-5 py-4 mb-6">
+      <div class="flex justify-between items-center mt-6 first:mt-0">
+        <div class="h-4 bg-gray-200 rounded w-32" />
+        <div class="h-4 bg-gray-200 rounded w-20" />
+      </div>
+      <div class="flex justify-between items-center mt-6 first:mt-0">
+        <div class="h-4 bg-gray-200 rounded w-36" />
+        <div class="h-4 bg-gray-200 rounded w-15" />
+      </div>
+      <div class="flex justify-between items-center mt-6 first:mt-0">
+        <div class="h-4 bg-gray-200 rounded w-33" />
+        <div class="h-4 bg-gray-200 rounded w-12" />
+      </div>
+    </div>
+
+    <!-- Refill + Recount Cards -->
+    <div class="grid grid-cols-2 gap-3 mb-2">
+      <div v-for="i in 2" :key="i" class="bg-white rounded-lg border border-gray-200 px-5 py-4">
+        <div class="h-5 bg-gray-200 rounded w-24 mb-3" />
+        <div class="h-8 bg-gray-200 rounded mb-2" />
+        <div class="h-8 bg-gray-200 rounded mb-2" />
+        <div class="h-8 bg-gray-200 rounded" />
+      </div>
+    </div>
+
+    <!-- Aktions-Buttons -->
+    <div class="mt-2 mb-6 pt-6 flex items-center justify-between">
+      <div class="h-8 bg-gray-200 rounded w-24" />
+      <div class="h-8 bg-gray-200 rounded w-24" />
+      <div class="h-8 bg-gray-200 rounded w-24" />
+    </div>
+
+    <!-- Verlauf -->
+    <div class="h-8 bg-gray-200 rounded w-20 mb-3" />
+    <div class="bg-white rounded-lg border border-gray-200 divide-y divide-gray-100">
+      <div v-for="i in 3" :key="i" class="px-5 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="h-5 bg-gray-200 rounded-full w-16" />
+          <div class="h-4 bg-gray-200 rounded w-28" />
+        </div>
+        <div class="h-4 bg-gray-200 rounded w-16" />
+      </div>
+    </div>
   </div>
+
   <div v-else-if="error" class="text-center py-12 text-gray-500">
     {{ $t('strings.error') }}
   </div>
