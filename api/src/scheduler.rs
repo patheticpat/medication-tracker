@@ -64,13 +64,13 @@ pub async fn notify_user(
         .fetch_all(&state.pool)
         .await?;
         let body = serde_json::json!({
-            "title": "Medication Tracker",
-            "body": if count == 1 {
-    "1 Medikament läuft bald ab.".to_string()
-} else {
-    format!("{} Medikamente laufen bald ab.", count)
-}
-        })
+                    "title": "Medication Tracker",
+                    "body": if count == 1 {
+            "1 Medikament läuft bald ab.".to_string()
+        } else {
+            format!("{} Medikamente laufen bald ab.", count)
+        }
+                })
         .to_string();
         for subscription in subscriptions {
             let subscription_info = SubscriptionInfo::new(

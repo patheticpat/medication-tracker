@@ -90,6 +90,9 @@ mod tests {
             .to_utc();
 
         let date = LocalDate::from_timezone_and_time(chrono_tz::America::New_York, now);
-        assert_eq!(date.0, chrono::NaiveDate::from_ymd_opt(2024, 1, 14).unwrap());
+        assert_eq!(
+            date.0,
+            chrono::NaiveDate::from_ymd_opt(2024, 1, 14).unwrap()
+        );
     }
 }
