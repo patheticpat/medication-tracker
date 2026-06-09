@@ -15,6 +15,7 @@ export function useMedications() {
   return useQuery({
     key: MEDICATION_KEYS.root,
     query: getMedications,
+    staleTime: 15 * 60 * 1000,
   })
 }
 
