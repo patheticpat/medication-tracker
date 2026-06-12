@@ -17,7 +17,7 @@ const route = useRoute()
 const router = useRouter()
 const showModal = computed(() => route.query.add === 'true')
 
-const { data, isLoading, error } = useMedications()
+const { data: medications, isLoading, error } = useMedications()
 const uiStore = useUI()
 const { toggleSortOrder } = uiStore
 const { sortOrder } = storeToRefs(uiStore)
@@ -26,7 +26,7 @@ const { addToast } = useToast()
 const { t } = useI18n()
 
 const filteredMedications = computed(() =>
-  [...(data.value ?? [])]
+  [...(medications.value ?? [])]
     .filter((m) => m.daysRemaining <= m.warningThreshold && !m.snoozed)
     .sort((a, b) => a.name.localeCompare(b.name)),
 )
@@ -35,9 +35,9 @@ const { mutate: updateSnooze } = useUpdateSnooze()
 
 const sortedMedications = computed(() => {
   if (sortOrder.value === 'alphabetical') {
-    return [...(data.value ?? [])].sort((a, b) => a.name.localeCompare(b.name))
+    return [...(medications.value ?? [])].sort((a, b) => a.name.localeCompare(b.name))
   } else {
-    const { warned, snoozed, good } = [...(data.value ?? [])]
+    const { warned, snoozed, good } = [...(medications.value ?? [])]
       .sort((a, b) => a.daysRemaining - b.daysRemaining)
       .reduce(
         (groups, m) => {
@@ -176,7 +176,7 @@ const snoozeAll = () => {
                   : 'bg-green-500'
               "
               :style="{
-                width: `${Math.min(medication.daysRemaining / (medication.warningThreshold * 4), 1) * 100}%`,
+                width: `${Math.min(medication.daysRemaining / 84, 1) * 100}%`,
               }"
             />
           </div>
