@@ -23,7 +23,8 @@ onUnmounted(() => {
   <button
     @click="copyToClipboard"
     :disabled="copied"
-    class="flex items-center gap-1.5 text-sm bg-red-100 hover:bg-red-200 text-red-700 px-3 py-1.5 rounded-md transition-colors disabled:opacity-50"
+    class="flex items-center gap-1.5 text-sm bg-red-100 hover:bg-red-200 text-red-700 px-3 py-1.5
+    rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
   >
     <ClipboardCheck v-if="copied" class="w-4 h-4" />
     <ClipboardCopy v-else class="w-4 h-4" />
