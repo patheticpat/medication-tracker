@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useMidnightRefresh } from './composables/useMidnightRefresh'
 import { useVersionCheck } from './composables/useVersionCheck.ts'
-import { useRoute, useRouter } from 'vue-router'
+import { useRouter } from 'vue-router'
 import { useAuth0 } from '@auth0/auth0-vue'
 import ToastContainer from './components/ToastContainer.vue'
 import LoginButton from './components/buttons/LoginButton.vue'
@@ -13,12 +13,13 @@ const { isAuthenticated, isLoading } = useAuth0()
 useMidnightRefresh()
 useVersionCheck()
 
-const route = useRoute()
 const router = useRouter()
 
 function handleLogoClick() {
-  if (route.name !== 'dashboard' && route.name !== 'home') {
-    router.back()
+  if (isAuthenticated) {
+    router.push({ name: 'dashboard' })
+  } else {
+    router.push({ name: 'home' })
   }
 }
 </script>
