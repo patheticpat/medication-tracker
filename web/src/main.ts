@@ -99,7 +99,7 @@ const messages = {
         alphabetical: 'A-Z',
         urgency: 'Vorrat',
       },
-      reorderNow: 'Nachbestellen!',
+      noMedicationsThisWeek: 'Keine Bestellung fällig',
     },
     medication: {
       add: 'Medikament hinzufügen',
