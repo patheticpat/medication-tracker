@@ -6,7 +6,7 @@ import { useAuth0 } from '@auth0/auth0-vue'
 import ToastContainer from './components/ToastContainer.vue'
 import LoginButton from './components/buttons/LoginButton.vue'
 import LogoutButton from './components/buttons/LogoutButton.vue'
-import { Settings2 } from 'lucide-vue-next'
+import { CalendarDays, Settings2 } from 'lucide-vue-next'
 
 const { isAuthenticated, isLoading } = useAuth0()
 
@@ -34,6 +34,13 @@ function handleLogoClick() {
           💊<span class="font-semibold text-gray-800 ml-3">{{ $t('strings.app') }}</span>
         </button>
         <div v-if="!isLoading" class="flex items-center gap-4">
+          <RouterLink
+            :to="{ name: 'agenda' }"
+            class="text-sm text-gray-500 hover:text-gray-700 transition-colors"
+            v-if="isAuthenticated"
+          >
+            <CalendarDays />
+          </RouterLink>
           <RouterLink
             :to="{ name: 'settings' }"
             class="text-sm text-gray-500 hover:text-gray-700 transition-colors"

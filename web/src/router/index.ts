@@ -20,6 +20,12 @@ const router = createRouter({
       beforeEnter: authGuard,
     },
     {
+      path: '/agenda',
+      name: 'agenda',
+      component: () => import('@/views/AgendaView.vue'),
+      beforeEnter: authGuard,
+    },
+    {
       path: '/medications/:id',
       name: 'medications-details',
       component: () => import('@/views/MedicationDetailView.vue'),
