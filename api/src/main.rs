@@ -36,6 +36,7 @@ use jsonwebtoken::{Algorithm, Validation};
 use sqlx::{SqlitePool, sqlite::SqliteConnectOptions};
 use std::{env, str::FromStr, sync::Arc};
 use tokio_cron_scheduler::{Job, JobScheduler};
+use tower::util::option_layer;
 use tower_http::cors::{Any, CorsLayer};
 use web_push::{
     IsahcWebPushClient, PartialVapidSignatureBuilder, URL_SAFE_NO_PAD, VapidSignatureBuilder,
@@ -67,7 +68,7 @@ async fn main() -> Result<()> {
         .await?;
     sqlx::migrate!("./migrations").run(&pool).await?;
 
-    let cors_origin = env::var(CORS_ORIGIN)?;
+    let cors_origin = env::var(CORS_ORIGIN).ok();
 
     let vapid_private_key = env::var("VAPID_PRIVATE_KEY")?;
     let vapid_subject = env::var("VAPID_SUBJECT")?;
@@ -138,17 +139,18 @@ async fn main() -> Result<()> {
         .route("/push/test", post(test_push))
         .with_state(state);
 
-    let app = app.layer(
+    let cors_layer = cors_origin.map(|origin| {
         CorsLayer::new()
-            .allow_origin(cors_origin.parse::<HeaderValue>().unwrap())
+            .allow_origin(origin.parse::<HeaderValue>().expect("invalid CORS_ORIGIN"))
             .allow_methods(Any)
             .allow_headers([
                 AUTHORIZATION,
                 CONTENT_TYPE,
                 HeaderName::from_static("x-timezone"),
-            ]),
-    );
+            ])
+    });
 
+    let app = app.layer(option_layer(cors_layer));
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await?;
     axum::serve(listener, app).await?;
 

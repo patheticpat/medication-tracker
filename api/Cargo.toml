@@ -28,3 +28,4 @@ axum-jwt-auth = "0.7.0"
 axum-valid = "0.24.0"
 validator = { version = "0.20.0", features = ["derive"] }
 parameterized = "2.1.0"
+tower = "0.5.3"

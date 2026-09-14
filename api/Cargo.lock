@@ -66,6 +66,7 @@ dependencies = [
  "sqlx",
  "tokio",
  "tokio-cron-scheduler",
+ "tower",
  "tower-http",
  "uuid",
  "validator",
