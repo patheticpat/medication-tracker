@@ -1,0 +1,19 @@
+name: Cleanup old images
+
+on:
+  schedule:
+    - cron: "0 3 * * 0" # sonntags 3 Uhr UTC
+  workflow_dispatch:
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        package: [medication-tracker-web, medication-tracker-api]
+    steps:
+      - uses: actions/delete-package-versions@v5
+        with:
+          package-name: ${{ matrix.package }}
+          package-type: container
+          min-versions-to-keep: 10
